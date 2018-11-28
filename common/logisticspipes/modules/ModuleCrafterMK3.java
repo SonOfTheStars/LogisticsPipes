@@ -18,8 +18,6 @@ import logisticspipes.pipes.PipeItemsCraftingLogisticsMk3;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.CacheHolder.CacheTypes;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
-import logisticspipes.utils.SinkReply;
-import logisticspipes.utils.SinkReply.BufferMode;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -45,16 +43,6 @@ public class ModuleCrafterMK3 extends ModuleCrafter implements IBufferItems, ISi
 	public void onAllowedRemoval() {
 		super.onAllowedRemoval();
 		inv.dropContents(getWorld(), getX(), getY(), getZ());
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal()
-				&& bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		return new SinkReply(_sinkReply, spaceFor(item, includeInTransit, true),
-				isForBuffer(item, includeInTransit) ? BufferMode.BUFFERED : areAllOrderesToBuffer() ? BufferMode.DESTINATION_BUFFERED : BufferMode.NONE);
 	}
 
 	protected int spaceFor(ItemIdentifier item, boolean includeInTransit, boolean addBufferSpace) {
