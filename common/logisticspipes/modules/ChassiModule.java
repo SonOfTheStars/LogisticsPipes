@@ -3,6 +3,8 @@ package logisticspipes.modules;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.nbt.NBTTagCompound;
+
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IWorldProvider;
@@ -18,8 +20,6 @@ import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
-import net.minecraft.nbt.NBTTagCompound;
 
 public class ChassiModule extends LogisticsGuiModule {
 
@@ -54,15 +54,18 @@ public class ChassiModule extends LogisticsGuiModule {
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		SinkReply bestresult = null;
 		for (LogisticsModule module : modules) {
 			if (module != null) {
-				SinkReply result = module.sinksItem(item, bestPriority, bestCustomPriority, allowDefault, includeInTransit);
-				if (result != null && result.maxNumberOfItems >= 0) {
-					bestresult = result;
-					bestPriority = result.fixedPriority.ordinal();
-					bestCustomPriority = result.customPriority;
+				if (!forcePassive || module.recievePassive()) {
+					SinkReply result = module.sinksItem(item, bestPriority, bestCustomPriority, allowDefault, includeInTransit, forcePassive);
+					if (result != null && result.maxNumberOfItems >= 0) {
+						bestresult = result;
+						bestPriority = result.fixedPriority.ordinal();
+						bestCustomPriority = result.customPriority;
+					}
 				}
 			}
 		}
@@ -71,7 +74,7 @@ public class ChassiModule extends LogisticsGuiModule {
 			return null;
 		}
 		//Always deny items when we can't put the item anywhere
-		IInventoryUtil invUtil = parentChassis.getSneakyInventory(false, ModulePositionType.SLOT, ((ChassiTargetInformation) bestresult.addInfo).getModuleSlot());
+		IInventoryUtil invUtil = parentChassis.getSneakyInventory(ModulePositionType.SLOT, ((ChassiTargetInformation) bestresult.addInfo).getModuleSlot());
 		if (invUtil == null) {
 			return null;
 		}

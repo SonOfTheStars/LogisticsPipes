@@ -17,8 +17,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import logisticspipes.blocks.BlockDummy;
-import logisticspipes.recipes.*;
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
@@ -54,18 +52,17 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.GameData;
-
-import lombok.Getter;
 import net.minecraftforge.registries.IForgeRegistry;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.Logger;
 
 import logisticspipes.asm.LogisticsPipesClassInjector;
 import logisticspipes.asm.wrapper.LogisticsWrapperHandler;
+import logisticspipes.blocks.BlockDummy;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
-import logisticspipes.blocks.LogisticsSolderingTileEntity;
 import logisticspipes.blocks.LogisticsSolidBlock;
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.blocks.powertile.LogisticsIC2PowerProviderTileEntity;
@@ -75,10 +72,10 @@ import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.commands.LogisticsPipesCommand;
 import logisticspipes.commands.chathelper.LPChatListener;
 import logisticspipes.config.Configs;
-import logisticspipes.config.PlayerConfig;
 import logisticspipes.datafixer.LPDataFixer;
 import logisticspipes.items.ItemBlankModule;
 import logisticspipes.items.ItemDisk;
+import logisticspipes.items.ItemGuideBook;
 import logisticspipes.items.ItemHUDArmor;
 import logisticspipes.items.ItemLogisticsChips;
 import logisticspipes.items.ItemLogisticsPipe;
@@ -109,13 +106,10 @@ import logisticspipes.pipes.PipeFluidSatellite;
 import logisticspipes.pipes.PipeFluidSupplierMk2;
 import logisticspipes.pipes.PipeItemsBasicLogistics;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
-import logisticspipes.pipes.PipeItemsCraftingLogisticsMk2;
-import logisticspipes.pipes.PipeItemsCraftingLogisticsMk3;
 import logisticspipes.pipes.PipeItemsFirewall;
 import logisticspipes.pipes.PipeItemsFluidSupplier;
 import logisticspipes.pipes.PipeItemsInvSysConnector;
 import logisticspipes.pipes.PipeItemsProviderLogistics;
-import logisticspipes.pipes.PipeItemsProviderLogisticsMk2;
 import logisticspipes.pipes.PipeItemsRemoteOrdererLogistics;
 import logisticspipes.pipes.PipeItemsRequestLogistics;
 import logisticspipes.pipes.PipeItemsRequestLogisticsMk2;
@@ -152,12 +146,17 @@ import logisticspipes.proxy.progressprovider.MachineProgressProvider;
 import logisticspipes.proxy.recipeproviders.ImmibisCraftingTableMk2;
 import logisticspipes.proxy.recipeproviders.LogisticsCraftingTable;
 import logisticspipes.proxy.recipeproviders.RollingMachine;
-import logisticspipes.proxy.recipeproviders.SolderingStation;
 import logisticspipes.proxy.specialconnection.EnderIOTransceiverConnection;
 import logisticspipes.proxy.specialconnection.SpecialPipeConnection;
 import logisticspipes.proxy.specialconnection.SpecialTileConnection;
 import logisticspipes.proxy.specialtankhandler.SpecialTankHandler;
 import logisticspipes.proxy.te.ThermalExpansionProgressProvider;
+import logisticspipes.recipes.CraftingRecipes;
+import logisticspipes.recipes.LPChipRecipes;
+import logisticspipes.recipes.ModuleChippedCraftingRecipes;
+import logisticspipes.recipes.PipeChippedCraftingRecipes;
+import logisticspipes.recipes.RecipeManager;
+import logisticspipes.recipes.UpgradeChippedCraftingRecipes;
 import logisticspipes.renderer.LogisticsHUDRenderer;
 import logisticspipes.routing.RouterManager;
 import logisticspipes.routing.ServerRouter;
@@ -179,13 +178,15 @@ import logisticspipes.utils.StaticResolverUtil;
 import logisticspipes.utils.TankUtilFactory;
 import logisticspipes.utils.tuples.Pair;
 import network.rs485.grow.TickExecutor;
+import network.rs485.logisticspipes.config.ClientConfiguration;
+import network.rs485.logisticspipes.config.ServerConfigurationManager;
 
 //@formatter:off
 //CHECKSTYLE:OFF
 
 @Mod(
 		modid = LPConstants.LP_MOD_ID,
-		/* %------------CERTIFICATE-SUM-----------% */
+		certificateFingerprint = "e0c86912b2f7cc0cc646ad57799574aea43dbd45",
 		useMetadata = true)
 public class LogisticsPipes {
 
@@ -246,7 +247,8 @@ public class LogisticsPipes {
 
 	private Queue<Runnable> postInitRun = new LinkedList<>();
 	private static LPGlobalCCAccess generalAccess;
-	private static PlayerConfig playerConfig;
+	private static ClientConfiguration playerConfig;
+	private static ServerConfigurationManager serverConfigManager;
 
 	private List<Supplier<Pair<Item, Item>>> resetRecipeList = new ArrayList<>();
 
@@ -256,9 +258,7 @@ public class LogisticsPipes {
 	@CapabilityInject(IFluidHandler.class)
 	public static Capability<IFluidHandler> FLUID_HANDLER_CAPABILITY = null;
 
-
-
- 	@Mod.EventHandler
+	@Mod.EventHandler
 	public void init(FMLInitializationEvent event) {
 		registerRecipes(); // TODO data fileS!!!!!
 
@@ -300,7 +300,7 @@ public class LogisticsPipes {
 
 		LPDataFixer.INSTANCE.init();
 
-		if(event.getSide() == Side.SERVER) {
+		if (event.getSide() == Side.SERVER) {
 			LogisticsPipes.textures.registerBlockIcons(null);
 		}
 	}
@@ -356,7 +356,6 @@ public class LogisticsPipes {
 		}
 		SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider(LPConstants.railcraftModID, "RollingMachine", RollingMachine.class));
 		SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider(LPConstants.tubestuffModID, "ImmibisCraftingTableMk2", ImmibisCraftingTableMk2.class));
-		SimpleServiceLocator.addCraftingRecipeProvider(new SolderingStation());
 		SimpleServiceLocator.addCraftingRecipeProvider(new LogisticsCraftingTable());
 
 		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.thermalExpansionModID, "Generic", ThermalExpansionProgressProvider.class));
@@ -364,7 +363,6 @@ public class LogisticsPipes {
 		//SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider("EnderIO", "Generic", EnderIOProgressProvider.class));
 		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.enderCoreModID, "Generic", EnderCoreProgressProvider.class));
 
-		GameRegistry.registerTileEntity(LogisticsSolderingTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "soldering_station"));
 		GameRegistry.registerTileEntity(LogisticsPowerJunctionTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_junction"));
 		GameRegistry.registerTileEntity(LogisticsRFPowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_rf"));
 		GameRegistry.registerTileEntity(LogisticsIC2PowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_ic2"));
@@ -415,6 +413,7 @@ public class LogisticsPipes {
 		registry.register(setName(new ItemDisk(), "disk"));
 		registry.register(setName(new LogisticsFluidContainer(), "fluid_container"));
 		registry.register(setName(new LogisticsBrokenItem(), "broken_item"));
+		registry.register(setName(new ItemGuideBook(), "guide_book"));
 		registry.register(setName(new ItemPipeController(), "pipe_controller"));
 		registry.register(setName(new ItemPipeManager(), "pipe_manager"));
 		registry.register(setName(new ItemLogisticsProgrammer(), "logistics_programmer"));
@@ -424,9 +423,7 @@ public class LogisticsPipes {
 		registry.register(setName(new ItemLogisticsChips(ItemLogisticsChips.ITEM_CHIP_ADVANCED_RAW), "chip_advanced_raw"));
 		registry.register(setName(new ItemLogisticsChips(ItemLogisticsChips.ITEM_CHIP_FPGA), "chip_fpga"));
 		registry.register(setName(new ItemLogisticsChips(ItemLogisticsChips.ITEM_CHIP_FPGA_RAW), "chip_fpga_raw"));
-
 		registry.register(setName(new LogisticsSolidBlockItem(LPBlocks.frame), "frame"));
-		registry.register(setName(new LogisticsSolidBlockItem(LPBlocks.solderingStation), "soldering_station"));
 		registry.register(setName(new LogisticsSolidBlockItem(LPBlocks.powerJunction), "power_junction"));
 		registry.register(setName(new LogisticsSolidBlockItem(LPBlocks.securityStation), "security_station"));
 		registry.register(setName(new LogisticsSolidBlockItem(LPBlocks.crafter), "crafting_table"));
@@ -440,8 +437,12 @@ public class LogisticsPipes {
 
 	// TODO move somewhere
 	public static <T extends Item> T setName(T item, String name) {
-		item.setRegistryName(LPConstants.LP_MOD_ID, name);
-		item.setUnlocalizedName(String.format("%s.%s", LPConstants.LP_MOD_ID, name));
+		return setName(item, name, LPConstants.LP_MOD_ID);
+	}
+
+	public static <T extends Item> T setName(T item, String name, String modID) {
+		item.setRegistryName(modID, name);
+		item.setUnlocalizedName(String.format("%s.%s", modID, name));
 		return item;
 	}
 
@@ -457,7 +458,6 @@ public class LogisticsPipes {
 		IForgeRegistry<Block> registry = event.getRegistry();
 
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_BLOCK_FRAME), "frame"));
-		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.SOLDERING_STATION), "soldering_station"));
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_POWER_JUNCTION), "power_junction"));
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_SECURITY_STATION), "security_station"));
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_AUTOCRAFTING_TABLE), "crafting_table"));
@@ -488,8 +488,8 @@ public class LogisticsPipes {
 		RecipeManager.loadRecipes();
 
 		resetRecipeList.stream()
-			.map(Supplier::get)
-			.forEach(itemItemPair -> registerShapelessResetRecipe(itemItemPair.getValue1(), itemItemPair.getValue2()));
+				.map(Supplier::get)
+				.forEach(itemItemPair -> registerShapelessResetRecipe(itemItemPair.getValue1(), itemItemPair.getValue2()));
 	}
 
 	@SneakyThrows
@@ -533,7 +533,7 @@ public class LogisticsPipes {
 		if (globalTickExecutor != null) {
 			globalTickExecutor.shutdownNow();
 		}
-		LogisticsEventListener.serverShutdown();
+		LogisticsPipes.serverConfigManager = null;
 	}
 
 	@Mod.EventHandler
@@ -571,14 +571,11 @@ public class LogisticsPipes {
 		registerPipe(registry, "chassis_mk3", PipeLogisticsChassiMk3::new);
 		registerPipe(registry, "chassis_mk4", PipeLogisticsChassiMk4::new);
 		registerPipe(registry, "chassis_mk5", PipeLogisticsChassiMk5::new);
-		registerPipe(registry, "crafting_mk2", PipeItemsCraftingLogisticsMk2::new);
 		registerPipe(registry, "request_mk2", PipeItemsRequestLogisticsMk2::new);
 		registerPipe(registry, "remote_orderer", PipeItemsRemoteOrdererLogistics::new);
-		registerPipe(registry, "provider_mk2", PipeItemsProviderLogisticsMk2::new);
 		registerPipe(registry, "inventory_system_connector", PipeItemsInvSysConnector::new);
 		registerPipe(registry, "system_entrance", PipeItemsSystemEntranceLogistics::new);
 		registerPipe(registry, "system_destination", PipeItemsSystemDestinationLogistics::new);
-		registerPipe(registry, "crafting_mk3", PipeItemsCraftingLogisticsMk3::new);
 		registerPipe(registry, "firewall", PipeItemsFirewall::new);
 
 		registerPipe(registry, "fluid_basic", PipeFluidBasic::new);
@@ -611,7 +608,7 @@ public class LogisticsPipes {
 		if (pipe.getClass() != PipeItemsBasicLogistics.class && CoreRoutedPipe.class.isAssignableFrom(pipe.getClass())) {
 			if (pipe.getClass() != PipeFluidBasic.class && PipeFluidBasic.class.isAssignableFrom(pipe.getClass())) {
 				resetRecipeList.add(() -> new Pair<>(res, LPItems.pipeFluidBasic));
-			} else if(pipe.getClass() != PipeBlockRequestTable.class) {
+			} else if (pipe.getClass() != PipeBlockRequestTable.class) {
 				resetRecipeList.add(() -> new Pair<>(res, LPItems.pipeBasic));
 			}
 		}
@@ -636,10 +633,17 @@ public class LogisticsPipes {
 		GameData.register_impl(recipe);
 	}
 
-	public static PlayerConfig getClientPlayerConfig() {
+	public static ClientConfiguration getClientPlayerConfig() {
 		if (LogisticsPipes.playerConfig == null) {
-			LogisticsPipes.playerConfig = new PlayerConfig(true, null);
+			LogisticsPipes.playerConfig = new ClientConfiguration();
 		}
 		return LogisticsPipes.playerConfig;
+	}
+
+	public static ServerConfigurationManager getServerConfigManager() {
+		if (LogisticsPipes.serverConfigManager == null) {
+			LogisticsPipes.serverConfigManager = new ServerConfigurationManager();
+		}
+		return LogisticsPipes.serverConfigManager;
 	}
 }

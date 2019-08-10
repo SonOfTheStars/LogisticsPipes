@@ -25,7 +25,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import logisticspipes.LPItems;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.crash.CrashReportCategory;
@@ -40,11 +39,11 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 
-import net.minecraftforge.items.CapabilityItemHandler;
-
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import logisticspipes.LPConstants;
+import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.asm.ModDependentMethod;
@@ -126,6 +125,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -313,9 +313,10 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 
 	protected List<TileEntity> getConnectedRawInventories() {
 		if (_cachedAdjacentInventories == null) {
-			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(container);
-			_cachedAdjacentInventories = worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-					.filter(adjacent -> adjacent.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)).map(adjacent -> adjacent.tileEntity)
+			_cachedAdjacentInventories = new WorldCoordinatesWrapper(container)
+					.connectedTileEntities(ConnectionPipeType.ITEM)
+					.filter(adjacent -> adjacent.isItemHandler() && !adjacent.isLogisticsPipe())
+					.map(NeighborTileEntity::getTileEntity)
 					.collect(Collectors.toList());
 		}
 		return _cachedAdjacentInventories;
@@ -354,8 +355,8 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		spawnParticleTick();
 		if (stillNeedReplace) {
 			stillNeedReplace = false;
-			IBlockState state = getWorld().getBlockState(getPos());
-			getWorld().notifyNeighborsOfStateChange(getPos(), state == null ? null : state.getBlock(), true);
+			//IBlockState state = getWorld().getBlockState(getPos());
+			//getWorld().notifyNeighborsOfStateChange(getPos(), state == null ? null : state.getBlock(), true);
 			/* TravelingItems are just held by a pipe, they don't need to know their world
 			 * for(Triplet<IRoutedItem, EnumFacing, ItemSendMode> item : _sendQueue) {
 				//assign world to any entityitem we created in readfromnbt
@@ -1474,87 +1475,84 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 
 	/* IInventoryProvider */
 
+	@Nullable
 	@Override
 	public IInventoryUtil getPointedInventory() {
-		if(getPointedOrientation() != null) {
-			return getSneakyInventory(getPointedOrientation().getOpposite());
-		}
-		return getSneakyInventory(null);
+		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
+		if (pointedItemHandler == null) return null;
+		return pointedItemHandler.getUtilForItemHandler();
 	}
 
+	@Nullable
 	@Override
-	public IInventoryUtil getPointedInventory(ExtractionMode mode, boolean forExtraction) {
-		TileEntity inv = getRealInventory();
-		if (inv == null) {
+	public IInventoryUtil getPointedInventory(ExtractionMode mode) {
+		final NeighborTileEntity<TileEntity> neighborItemHandler = getPointedItemHandler();
+		if (neighborItemHandler == null) {
 			return null;
 		}
+		return getInventoryForExtractionMode(mode, neighborItemHandler);
+	}
+
+	public static IInventoryUtil getInventoryForExtractionMode(ExtractionMode mode, NeighborTileEntity<TileEntity> neighborItemHandler) {
 		switch (mode) {
 			case LeaveFirst:
-				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), false, false, 1, 0);
+				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						false, false, 1, 0);
 			case LeaveLast:
-				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), false, false, 0, 1);
+				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						false, false, 0, 1);
 			case LeaveFirstAndLast:
-				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), false, false, 1, 1);
+				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						false, false, 1, 1);
 			case Leave1PerStack:
-				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), true, false, 0, 0);
+				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						true, false, 0, 0);
 			case Leave1PerType:
-				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), false, true, 0, 0);
+				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						false, true, 0, 0);
 			default:
 				break;
 		}
-		return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(inv, getPointedOrientation().getOpposite(), false, false, 0, 0);
+		return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
+				neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+				false, false, 0, 0);
 	}
 
+	@Nullable
 	@Override
-	public IInventoryUtil getSneakyInventory(boolean forExtraction, ModulePositionType slot, int positionInt) {
-		ISlotUpgradeManager manager = getUpgradeManager(slot, positionInt);
-		EnumFacing insertion = getPointedOrientation().getOpposite();
-		if (manager.hasSneakyUpgrade()) {
-			insertion = manager.getSneakyOrientation();
-		}
-		return getSneakyInventory(insertion);
-	}
-
-	@Override
-	public IInventoryUtil getSneakyInventory(EnumFacing _sneakyOrientation) {
-		TileEntity inv = getRealInventory();
-		if (inv == null) {
+	public IInventoryUtil getSneakyInventory(ModulePositionType slot, int positionInt) {
+		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
+		if (pointedItemHandler == null) {
 			return null;
 		}
-		return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(inv, _sneakyOrientation);
+		return pointedItemHandler.sneakyInsertion().from(getUpgradeManager(slot, positionInt)).getUtilForItemHandler();
 	}
 
+	@Nullable
 	@Override
-	public IInventoryUtil getUnsidedInventory() {
-		TileEntity inv = getRealInventory();
-		if (inv == null) {
+	public IInventoryUtil getSneakyInventory(@NotNull EnumFacing direction) {
+		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
+		if (pointedItemHandler == null) {
 			return null;
 		}
-		return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(inv, null);
+		return pointedItemHandler.sneakyInsertion().from(direction).getUtilForItemHandler();
 	}
 
+	@Nullable
 	@Override
-	public TileEntity getRealInventory() {
-		TileEntity tile = getPointedTileEntity();
-		if (tile == null) {
-			return null;
-		}
-		if (!tile.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, getPointedOrientation())) {
-			return null;
-		}
-		return tile;
-	}
-
-	private TileEntity getPointedTileEntity() {
-		if (pointedDirection == null) {
-			return null;
-		}
-		return getContainer().getTile(pointedDirection);
-	}
-
-	@Override
-	public EnumFacing inventoryOrientation() {
-		return getPointedOrientation();
+	public NeighborTileEntity<TileEntity> getPointedItemHandler() {
+		final EnumFacing pointedOrientation = getPointedOrientation();
+		if (pointedOrientation == null) return null;
+		final TileEntity tile = getContainer().getTile(pointedOrientation);
+		if (tile == null) return null;
+		final NeighborTileEntity<TileEntity> neighbor = new NeighborTileEntity<>(tile, pointedOrientation);
+		if (!neighbor.isItemHandler()) return null;
+		return neighbor;
 	}
 
 	/* ISendRoutedItem */
@@ -1594,14 +1592,16 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		return itemToSend;
 	}
 
+	@Nullable
+	@Override
 	public EnumFacing getPointedOrientation() {
 		if (pointedDirection == null) {
-			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(container);
-			Optional<EnumFacing> first = worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-					.filter(adjacent -> adjacent.tileEntity != null).map(adjacent -> adjacent.direction).findFirst();
-			if(first.isPresent()) {
-				return first.get();
-			}
+			final Optional<EnumFacing> firstDirection = new WorldCoordinatesWrapper(container)
+					.connectedTileEntities(ConnectionPipeType.ITEM)
+					.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isPipe(adjacent.getTileEntity()))
+					.map(NeighborTileEntity::getDirection)
+					.findFirst();
+			firstDirection.ifPresent(enumFacing -> pointedDirection = enumFacing);
 		}
 		return pointedDirection;
 	}
@@ -1623,12 +1623,13 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 				signItem[dir.ordinal()].init(this, dir);
 			}
 			if (container != null) {
-				sendSignData(player);
+				sendSignData(player, true);
+				refreshRender(false);
 			}
 		}
 	}
 
-	public void sendSignData(EntityPlayer player) {
+	public void sendSignData(EntityPlayer player, boolean sendToAll) {
 		List<Integer> types = new ArrayList<>();
 		for (int i = 0; i < 6; i++) {
 			if (signItem[i] == null) {
@@ -1644,7 +1645,9 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 			}
 		}
 		ModernPacket packet = PacketHandler.getPacket(PipeSignTypes.class).setTypes(types).setTilePos(container);
-		MainProxy.sendPacketToAllWatchingChunk(getX(), getZ(), getWorld().provider.getDimension(), packet);
+		if (sendToAll) {
+			MainProxy.sendPacketToAllWatchingChunk(getX(), getZ(), getWorld().provider.getDimension(), packet);
+		}
 		MainProxy.sendPacketToPlayer(packet, player);
 		for (int i = 0; i < 6; i++) {
 			if (signItem[i] != null) {
@@ -1655,14 +1658,14 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 				}
 			}
 		}
-		refreshRender(false);
 	}
 
 	public void removePipeSign(EnumFacing dir, EntityPlayer player) {
 		if (dir.ordinal() < 6) {
 			signItem[dir.ordinal()] = null;
 		}
-		sendSignData(player);
+		sendSignData(player, true);
+		refreshRender(false);
 	}
 
 	public boolean hasPipeSign(EnumFacing dir) {

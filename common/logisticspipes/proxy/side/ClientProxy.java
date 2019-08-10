@@ -7,11 +7,13 @@ import logisticspipes.LPBlocks;
 import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.gui.GuiCraftingPipe;
+import logisticspipes.gui.GuiGuideBook;
 import logisticspipes.gui.modules.ModuleBaseGui;
 import logisticspipes.gui.popup.SelectItemOutOfList;
 import logisticspipes.interfaces.ILogisticsItem;
 import logisticspipes.items.ItemLogisticsPipe;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.gui.DummyContainerSlotClick;
 import logisticspipes.pipefxhandlers.Particles;
@@ -38,6 +40,7 @@ import logisticspipes.renderer.newpipe.LogisticsNewPipeModel;
 import logisticspipes.renderer.newpipe.LogisticsNewRenderPipe;
 import logisticspipes.textures.Textures;
 import logisticspipes.utils.FluidIdentifier;
+import logisticspipes.utils.GuideBookContents;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifier;
@@ -47,10 +50,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
@@ -70,6 +75,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class ClientProxy implements IProxy {
 
+	int renderIndex = 0;
 
 	@Override
 	public String getSide() {
@@ -133,9 +139,10 @@ public class ClientProxy implements IProxy {
 	}
 
 	// BuildCraft method
+
 	/**
 	 * Retrieves pipe at specified coordinates if any.
-	 * 
+	 *
 	 * @param world
 	 * @param x
 	 * @param y
@@ -190,10 +197,12 @@ public class ClientProxy implements IProxy {
 	@Override
 	public EntityPlayer getEntityPlayerFromNetHandler(INetHandler handler) {
 		if (handler instanceof NetHandlerPlayServer) {
-			return ((NetHandlerPlayServer) handler).player;
-		} else {
-			return Minecraft.getMinecraft().player;
+			EntityPlayerMP player = ((NetHandlerPlayServer) handler).player;
+			if (player != null) {
+				return player;
+			}
 		}
+		return Minecraft.getMinecraft().player;
 	}
 
 	@Override
@@ -227,7 +236,10 @@ public class ClientProxy implements IProxy {
 				}
 				list.add(fluid.getItemIdentifier().makeStack(1));
 			}
-			SelectItemOutOfList subGui = new SelectItemOutOfList(list, slot -> MainProxy.sendPacketToServer(PacketHandler.getPacket(DummyContainerSlotClick.class).setSlotId(slotId).setStack(list.get(slot).makeNormalStack()).setButton(0)));
+			SelectItemOutOfList subGui = new SelectItemOutOfList(list, slot -> {
+				if(slot == -1) return;
+				MainProxy.sendPacketToServer(PacketHandler.getPacket(DummyContainerSlotClick.class).setSlotId(slotId).setStack(list.get(slot).makeNormalStack()).setButton(0));
+			});
 			LogisticsBaseGuiScreen gui = (LogisticsBaseGuiScreen) Minecraft.getMinecraft().currentScreen;
 			if (!gui.hasSubGui()) {
 				gui.setSubGui(subGui);
@@ -244,11 +256,20 @@ public class ClientProxy implements IProxy {
 	}
 
 	@Override
+	public void openGuideBookGui(EnumHand hand) {
+		Minecraft mc = Minecraft.getMinecraft();
+		GuideBookContents gbc = GuideBookContents.load();
+		if (gbc != null) {
+			mc.displayGuiScreen(new GuiGuideBook(hand, gbc));
+		}
+	}
+
+	@Override
 	public void registerModels() {
 		ForgeRegistries.ITEMS.getValuesCollection().stream()
 				.filter(item -> item.getRegistryName().getResourceDomain().equals(LPConstants.LP_MOD_ID))
 				.filter(item -> item instanceof ILogisticsItem)
-				.forEach(item -> registerModels((ILogisticsItem)item));
+				.forEach(item -> registerModels((ILogisticsItem) item));
 	}
 
 	private void registerModels(ILogisticsItem item) {
@@ -273,6 +294,7 @@ public class ClientProxy implements IProxy {
 		LogisticsNewRenderPipe.registerTextures(Minecraft.getMinecraft().getTextureMapBlocks());
 		LogisticsNewPipeModel.registerTextures(Minecraft.getMinecraft().getTextureMapBlocks());
 		SimpleServiceLocator.thermalDynamicsProxy.registerTextures(Minecraft.getMinecraft().getTextureMapBlocks());
+		renderIndex++;
 	}
 
 	@Override
@@ -280,6 +302,11 @@ public class ClientProxy implements IProxy {
 		ModelLoaderRegistry.registerLoader(new LogisticsNewPipeModel.LogisticsNewPipeModelLoader());
 		ModelLoaderRegistry.registerLoader(new LogisticsBlockModel.Loader());
 		ModelLoaderRegistry.registerLoader(new FluidContainerRenderer.FluidContainerRendererModelLoader());
+	}
+
+	@Override
+	public int getRenderIndex() {
+		return renderIndex;
 	}
 
 }

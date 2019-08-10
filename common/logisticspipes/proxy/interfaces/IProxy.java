@@ -9,6 +9,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.INetHandler;
+import net.minecraft.util.EnumHand;
 import net.minecraft.world.World;
 
 public interface IProxy {
@@ -51,10 +52,13 @@ public interface IProxy {
 
 	public void openFluidSelectGui(int slotId);
 
+	public void openGuideBookGui(EnumHand hand);
+
 	default void registerModels() {}
 
 	void registerTextures();
 
 	void initModelLoader();
 
+	int getRenderIndex();
 }

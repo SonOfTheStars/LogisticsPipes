@@ -51,14 +51,19 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsGuiModule implement
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
 			return null;
 		}
 		if (tabSet == null) {
 			buildModIdSet();
 		}
-		// TODO: Creative tab name is only available client side..
+		if (tabSet.contains(item.getCreativeTabName())) {
+			if (_service.canUseEnergy(5)) {
+				return _sinkReply;
+			}
+		}
 		return null;
 	}
 
@@ -186,7 +191,6 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsGuiModule implement
 
 	@Override
 	public String getStringForItem(ItemIdentifier ident) {
-		// TODO: Creative tab label is only available client side..
-		return "";
+		return ident.getCreativeTabName();
 	}
 }

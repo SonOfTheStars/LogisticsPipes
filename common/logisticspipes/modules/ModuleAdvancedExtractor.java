@@ -7,6 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
+
 import logisticspipes.gui.hud.modules.HUDAdvancedExtractor;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
@@ -14,7 +20,6 @@ import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.modules.abstractmodules.LogisticsSneakyDirectionModule;
 import logisticspipes.network.NewGuiHandler;
@@ -40,13 +45,6 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraft.util.EnumFacing;
 
 @CCType(name = "Advanced Extractor Module")
 public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
@@ -131,7 +129,8 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		return null;
 	}
 
@@ -156,13 +155,6 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 		return 1 + getUpgradeManager().getItemExtractionUpgrade() > 0 ? ItemSendMode.Fast : ItemSendMode.Normal;
 	}
 
-	protected ISlotUpgradeManager getUpgradeManager() {
-		if (_service == null) {
-			return null;
-		}
-		return _service.getUpgradeManager(slot, positionInt);
-	}
-
 	@Override
 	public void tick() {
 		if (++currentTick < ticksToAction()) {
@@ -172,8 +164,12 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 
 		EnumFacing extractOrientation = _sneakyDirection;
 		if (extractOrientation == null) {
-			extractOrientation = _service.inventoryOrientation().getOpposite();
+			EnumFacing invOrientation = _service.getPointedOrientation();
+			if (invOrientation != null) {
+				extractOrientation = invOrientation.getOpposite();
+			}
 		}
+		if (extractOrientation == null) return;
 		IInventoryUtil inventory = _service.getSneakyInventory(extractOrientation);
 		if (inventory == null) {
 			return;
@@ -184,6 +180,7 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 
 	private void checkExtract(IInventoryUtil invUtil) {
 		Map<ItemIdentifier, Integer> items = invUtil.getItemsAndCount();
+		int itemsleft = itemsToExtract();
 		for (Entry<ItemIdentifier, Integer> item : items.entrySet()) {
 			if (!CanExtract(item.getKey().makeNormalStack(item.getValue()))) {
 				continue;
@@ -194,7 +191,6 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 				continue;
 			}
 
-			int itemsleft = itemsToExtract();
 			while (reply != null) {
 				int count = Math.min(itemsleft, item.getValue());
 				count = Math.min(count, item.getKey().getMaxStackSize());
@@ -212,7 +208,7 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 				}
 
 				ItemStack stackToSend = invUtil.getMultipleItems(item.getKey(), count);
-				if (stackToSend == null || stackToSend.isEmpty()) {
+				if (stackToSend.isEmpty()) {
 					break;
 				}
 				count = stackToSend.getCount();
@@ -222,10 +218,15 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 					break;
 				}
 
-				jamList.add(reply.getValue1());
+				if(count <= 0) {
+					jamList.add(reply.getValue1());
+				}
+
 				reply = _service.hasDestination(item.getKey(), true, jamList);
 			}
-			return;
+			if (itemsleft <= 0) {
+				return;
+			}
 		}
 	}
 
@@ -233,7 +234,7 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 		for (int i = 0; i < _filterInventory.getSizeInventory(); i++) {
 
 			ItemStack stack = _filterInventory.getStackInSlot(i);
-			if ((stack != null) && (stack.getItem() == item.getItem())) {
+			if ((!stack.isEmpty()) && (stack.getItem() == item.getItem())) {
 				if (item.getItem().isDamageable()) {
 					return areItemsIncluded();
 				}

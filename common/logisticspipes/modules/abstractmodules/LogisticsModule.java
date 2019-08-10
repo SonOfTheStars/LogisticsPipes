@@ -3,9 +3,13 @@ package logisticspipes.modules.abstractmodules;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.annotation.Nullable;
+
+import lombok.Getter;
 
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IQueueCCEvent;
+import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.computers.interfaces.CCCommand;
@@ -15,8 +19,6 @@ import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
-import lombok.Getter;
 
 @CCType(name = "LogisticsModule")
 public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
@@ -95,9 +97,12 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	 * @param includeInTransit
 	 *            inclide the "in transit" items? -- true for a destination
 	 *            search, false for a sink check.
+	 * @param forcePassive
+	 *            check for passive routing only, in case this method is redirected to other sinks
 	 * @return SinkReply whether the module sinks the item or not
 	 */
-	public abstract SinkReply sinksItem(ItemIdentifier stack, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit);
+	public abstract SinkReply sinksItem(ItemIdentifier stack, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive);
 
 	/**
 	 * Returns submodules. Normal modules don't have submodules
@@ -168,6 +173,14 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	@Override
 	public String toString() {
 		return (new StringBuilder()).append(getClass().getSimpleName()).append("@").append("(").append(getX()).append(", ").append(getY()).append(", ").append(getZ()).append(")").toString();
+	}
+
+	@Nullable
+	protected ISlotUpgradeManager getUpgradeManager() {
+		if (_service == null) {
+			return null;
+		}
+		return _service.getUpgradeManager(slot, positionInt);
 	}
 
 	/**

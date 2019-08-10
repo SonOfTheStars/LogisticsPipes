@@ -4,13 +4,18 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+
 import logisticspipes.gui.hud.modules.HUDExtractor;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.modules.abstractmodules.LogisticsSneakyDirectionModule;
 import logisticspipes.network.NewGuiHandler;
@@ -29,13 +34,7 @@ import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
 
 public class ModuleExtractor extends LogisticsSneakyDirectionModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver {
 
@@ -68,13 +67,6 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 		return getUpgradeManager().getItemExtractionUpgrade() > 0 ? ItemSendMode.Fast : ItemSendMode.Normal;
 	}
 
-	protected ISlotUpgradeManager getUpgradeManager() {
-		if (_service == null) {
-			return null;
-		}
-		return _service.getUpgradeManager(slot, positionInt);
-	}
-
 	@Override
 	public EnumFacing getSneakyDirection() {
 		return _sneakyDirection;
@@ -87,7 +79,8 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		return null;
 	}
 
@@ -149,17 +142,23 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 		currentTick = 0;
 
 		//Extract Item
-		TileEntity realInventory = _service.getRealInventory();
-		if (realInventory == null) {
+		final NeighborTileEntity<TileEntity> pointedItemHandler = _service.getPointedItemHandler();
+		if (pointedItemHandler == null) {
 			return;
 		}
 		EnumFacing extractOrientation = _sneakyDirection;
 		if (extractOrientation == null) {
-			extractOrientation = _service.inventoryOrientation().getOpposite();
+			final EnumFacing pointedOrientation = _service.getPointedOrientation();
+			if (pointedOrientation != null) {
+				extractOrientation = pointedOrientation.getOpposite();
+			}
 		}
 
+		if (extractOrientation == null) return;
 		IInventoryUtil targetUtil = _service.getSneakyInventory(extractOrientation);
+		if (targetUtil == null) return;
 
+		int itemsleft = itemsToExtract();
 		for (int i = 0; i < targetUtil.getSizeInventory(); i++) {
 
 			ItemStack slot = targetUtil.getStackInSlot(i);
@@ -173,7 +172,6 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 				continue;
 			}
 
-			int itemsleft = itemsToExtract();
 			while (reply != null) {
 				int count = Math.min(itemsleft, slot.getCount());
 				count = Math.min(count, slotitem.getMaxStackSize());
@@ -191,7 +189,7 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 				}
 
 				ItemStack stackToSend = targetUtil.decrStackSize(i, count);
-				if (stackToSend.isEmpty() || stackToSend.getCount() == 0) {
+				if (stackToSend.isEmpty()) {
 					break;
 				}
 				count = stackToSend.getCount();
@@ -207,7 +205,9 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 				jamList.add(reply.getValue1());
 				reply = _service.hasDestination(ItemIdentifier.get(slot), true, jamList);
 			}
-			break;
+			if (itemsleft <= 0) {
+				break;
+			}
 		}
 	}
 

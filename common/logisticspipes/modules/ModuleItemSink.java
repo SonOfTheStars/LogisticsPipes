@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.nbt.NBTTagCompound;
+
 import logisticspipes.gui.hud.modules.HUDItemSink;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
@@ -14,6 +18,7 @@ import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
+import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
@@ -40,10 +45,6 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.nbt.NBTTagCompound;
 
 @CCType(name = "ItemSink Module")
 public class ModuleItemSink extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive {
@@ -91,7 +92,8 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		if (_isDefaultRoute && !allowDefault) {
 			return null;
 		}
@@ -104,7 +106,8 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 			}
 			return null;
 		}
-		if (_service.getUpgradeManager(slot, positionInt).isFuzzyUpgrade()) {
+		final ISlotUpgradeManager upgradeManager = getUpgradeManager();
+		if (upgradeManager != null && upgradeManager.isFuzzyUpgrade()) {
 			for (Pair<ItemIdentifierStack, Integer> stack : _filterInventory) {
 				if (stack == null) {
 					continue;
@@ -144,7 +147,11 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 
 	@Override
 	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		return NewGuiHandler.getGui(ItemSinkSlot.class).setDefaultRoute(_isDefaultRoute).setIgnoreData(ignoreData).setIgnoreNBT(ignoreNBT).setHasFuzzyUpgrade(_service.getUpgradeManager(slot, positionInt).isFuzzyUpgrade());
+		return NewGuiHandler.getGui(ItemSinkSlot.class)
+				.setDefaultRoute(_isDefaultRoute)
+				.setIgnoreData(ignoreData)
+				.setIgnoreNBT(ignoreNBT)
+				.setHasFuzzyUpgrade(getUpgradeManager().isFuzzyUpgrade());
 	}
 
 	@Override
@@ -241,7 +248,7 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 		List<ItemIdentifier> li = new ArrayList<>(mapIC.size());
 		li.addAll(mapIC.keySet());
 		li.addAll(mapIC.keySet().stream().map(ItemIdentifier::getUndamaged).collect(Collectors.toList()));
-		if (_service.getUpgradeManager(slot, positionInt).isFuzzyUpgrade()) {
+		if (getUpgradeManager().isFuzzyUpgrade()) {
 			for (Pair<ItemIdentifierStack, Integer> stack : _filterInventory) {
 				if (stack.getValue1() == null) {
 					continue;

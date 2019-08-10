@@ -1,45 +1,28 @@
 package logisticspipes.renderer.newpipe;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import logisticspipes.interfaces.ITubeOrientation;
-import logisticspipes.proxy.object3d.operation.*;
-
-import net.minecraft.client.particle.ParticleManager;
-import network.rs485.logisticspipes.world.CoordinateUtils;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
-import logisticspipes.LPConstants;
-import logisticspipes.LogisticsPipes;
-import logisticspipes.config.PlayerConfig;
-import logisticspipes.pipefxhandlers.EntityModelFX;
-import logisticspipes.pipes.PipeBlockRequestTable;
-import logisticspipes.pipes.basic.CoreUnroutedPipe;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.object3d.interfaces.I3DOperation;
-import logisticspipes.proxy.object3d.interfaces.IBounds;
-import logisticspipes.proxy.object3d.interfaces.TextureTransformation;
-import logisticspipes.proxy.object3d.interfaces.IModel3D;
-import logisticspipes.proxy.object3d.interfaces.IVec3;
-import logisticspipes.renderer.state.PipeRenderState;
-import logisticspipes.textures.Textures;
-import logisticspipes.utils.tuples.Quartet;
-
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.world.World;
-
-import net.minecraft.util.EnumFacing;
 
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -49,6 +32,34 @@ import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.lwjgl.opengl.GL11;
+
+import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
+import logisticspipes.interfaces.ITubeOrientation;
+import logisticspipes.pipefxhandlers.EntityModelFX;
+import logisticspipes.pipes.PipeBlockRequestTable;
+import logisticspipes.pipes.PipeItemsBasicLogistics;
+import logisticspipes.pipes.basic.CoreUnroutedPipe;
+import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.object3d.interfaces.I3DOperation;
+import logisticspipes.proxy.object3d.interfaces.IBounds;
+import logisticspipes.proxy.object3d.interfaces.IModel3D;
+import logisticspipes.proxy.object3d.interfaces.IVec3;
+import logisticspipes.proxy.object3d.interfaces.TextureTransformation;
+import logisticspipes.proxy.object3d.operation.LPColourMultiplier;
+import logisticspipes.proxy.object3d.operation.LPScale;
+import logisticspipes.proxy.object3d.operation.LPTranslation;
+import logisticspipes.proxy.object3d.operation.LPUVScale;
+import logisticspipes.proxy.object3d.operation.LPUVTransformationList;
+import logisticspipes.proxy.object3d.operation.LPUVTranslation;
+import logisticspipes.renderer.state.PipeRenderState;
+import logisticspipes.textures.Textures;
+import logisticspipes.utils.tuples.Quartet;
+import network.rs485.logisticspipes.config.ClientConfiguration;
+import network.rs485.logisticspipes.world.CoordinateUtils;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 
@@ -296,6 +307,8 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 
 	static IModel3D innerTransportBox;
 	public static IModel3D highlight;
+
+	private static final List<RenderEntry> pipeFrameRenderList = new ArrayList<>();
 
 	public static TextureTransformation basicPipeTexture;
 	public static TextureTransformation inactiveTexture;
@@ -567,16 +580,16 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 			LogisticsNewRenderPipe.statusTexture = SimpleServiceLocator.cclProxy.createIconTransformer(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel-status")));
 			LogisticsNewRenderPipe.statusBCTexture = SimpleServiceLocator.cclProxy.createIconTransformer(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel-status-BC")));
 		} else {
-			LogisticsNewRenderPipe.basicPipeTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/PipeModel")));
-			LogisticsNewRenderPipe.inactiveTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/PipeModel-inactive")));
-			LogisticsNewRenderPipe.innerBoxTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/InnerBox")));
-			LogisticsNewRenderPipe.glassCenterTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/Glass_Texture_Center")));
-			LogisticsNewRenderPipe.statusTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/PipeModel-status")));
-			LogisticsNewRenderPipe.statusBCTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "pipes/PipeModel-status-BC")));
+			LogisticsNewRenderPipe.basicPipeTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel")));
+			LogisticsNewRenderPipe.inactiveTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel-inactive")));
+			LogisticsNewRenderPipe.innerBoxTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/InnerBox")));
+			LogisticsNewRenderPipe.glassCenterTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/Glass_Texture_Center")));
+			LogisticsNewRenderPipe.statusTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel-status")));
+			LogisticsNewRenderPipe.statusBCTexture.update(iconRegister.registerSprite(new ResourceLocation("logisticspipes", "blocks/pipes/PipeModel-status-BC")));
 		}
 	}
 
-	private PlayerConfig config = LogisticsPipes.getClientPlayerConfig();
+	private ClientConfiguration config = LogisticsPipes.getClientPlayerConfig();
 
 	public void renderTileEntityAt(LogisticsTileGenericPipe pipeTile, double x, double y, double z, float partialTickTime, double distance) {
 		boolean inHand = false;
@@ -616,6 +629,10 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 	public static boolean checkAndCalculateRenderCache(LogisticsTileGenericPipe pipeTile) {
 		PipeRenderState renderState = pipeTile.renderState;
 
+		if (renderState.cachedRenderIndex != MainProxy.proxy.getRenderIndex()) {
+			renderState.clearRenderCaches();
+		}
+
 		if (renderState.cachedRenderer == null) {
 			List<RenderEntry> objectsToRender = new ArrayList<>();
 
@@ -626,6 +643,7 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 				pipeTile.pipe.getSpecialRenderer().renderToList(pipeTile.pipe, objectsToRender);
 			}
 
+			renderState.cachedRenderIndex = MainProxy.proxy.getRenderIndex();
 			renderState.cachedRenderer = Collections.unmodifiableList(objectsToRender);
 			return true;
 		}
@@ -730,13 +748,16 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 						}
 					}
 					for (IModel3D model : LogisticsNewRenderPipe.sideNormal.get(dir)) {
-						DoubleCoordinates coords = CoordinateUtils.add(new DoubleCoordinates((TileEntity) pipeTile), dir);
-						Block block = coords.getBlock(pipeTile.getWorld());
-						AxisAlignedBB bb = block.getCollisionBoundingBox(coords.getBlockState(pipeTile.getWorld()), pipeTile.getWorld(), coords.getBlockPos());
-						if(bb == null) bb = Block.FULL_BLOCK_AABB;
-						double[] bounds = { bb.minY, bb.minZ, bb.minX, bb.maxY, bb.maxZ, bb.maxX };
-						if(SimpleServiceLocator.enderIOProxy.isItemConduit(coords.getTileEntity(pipeTile.getWorld()), dir.getOpposite()) || SimpleServiceLocator.enderIOProxy.isFluidConduit(coords.getTileEntity(pipeTile.getWorld()), dir.getOpposite())) {
-							bounds = new double[]{0.0249D, 0.0249D, 0.0249D, 0.9751D, 0.9751D, 0.9751D};
+						double[] bounds = { Block.FULL_BLOCK_AABB.minY, Block.FULL_BLOCK_AABB.minZ, Block.FULL_BLOCK_AABB.minX, Block.FULL_BLOCK_AABB.maxY, Block.FULL_BLOCK_AABB.maxZ, Block.FULL_BLOCK_AABB.maxX };
+						if(pipeTile.getWorld() != null) { //This can be null in some cases now !!!
+							DoubleCoordinates coords = CoordinateUtils.add(new DoubleCoordinates((TileEntity) pipeTile), dir);
+							Block block = coords.getBlock(pipeTile.getWorld());
+							AxisAlignedBB bb = block.getCollisionBoundingBox(coords.getBlockState(pipeTile.getWorld()), pipeTile.getWorld(), coords.getBlockPos());
+							if (bb == null) bb = Block.FULL_BLOCK_AABB;
+							bounds =  new double[]{ bb.minY, bb.minZ, bb.minX, bb.maxY, bb.maxZ, bb.maxX };
+							if(SimpleServiceLocator.enderIOProxy.isItemConduit(coords.getTileEntity(pipeTile.getWorld()), dir.getOpposite()) || SimpleServiceLocator.enderIOProxy.isFluidConduit(coords.getTileEntity(pipeTile.getWorld()), dir.getOpposite())) {
+								bounds = new double[]{0.0249D, 0.0249D, 0.0249D, 0.9751D, 0.9751D, 0.9751D};
+							}
 						}
 						double bound = bounds[dir.ordinal() / 2 + (dir.ordinal() % 2 == 0 ? 3 : 0)];
 						ScaleObject key = new ScaleObject(model, bound);
@@ -866,17 +887,21 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 		}
 
 		boolean[] solidSides = new boolean[6];
-		for (EnumFacing dir : EnumFacing.VALUES) {
-			DoubleCoordinates pos = CoordinateUtils.add(new DoubleCoordinates((TileEntity) pipeTile), dir);
-			Block blockSide = pos.getBlock(pipeTile.getWorld());
-			if (blockSide == null || !blockSide.isSideSolid(pos.getBlockState(pipeTile.getWorld()), pipeTile.getWorld(), pos.getBlockPos(), dir.getOpposite()) || renderState.pipeConnectionMatrix.isConnected(dir)) {
-				mountCanidates.removeIf(mount -> mount.dir == dir);
-			} else {
-				solidSides[dir.ordinal()] = true;
+		if (pipeTile.getWorld() != null) { // This can be null in some cases now !!!
+			for (EnumFacing dir : EnumFacing.VALUES) {
+				DoubleCoordinates pos = CoordinateUtils.add(new DoubleCoordinates((TileEntity) pipeTile), dir);
+				Block blockSide = pos.getBlock(pipeTile.getWorld());
+				if (blockSide == null || !blockSide.isSideSolid(pos.getBlockState(pipeTile.getWorld()), pipeTile.getWorld(), pos.getBlockPos(), dir.getOpposite()) || renderState.pipeConnectionMatrix.isConnected(dir)) {
+					mountCanidates.removeIf(mount -> mount.dir == dir);
+				} else {
+					solidSides[dir.ordinal()] = true;
+				}
 			}
-		}
 
-		mountCanidates.removeIf(mount -> SimpleServiceLocator.mcmpProxy.hasParts(pipeTile));
+			mountCanidates.removeIf(mount -> SimpleServiceLocator.mcmpProxy.hasParts(pipeTile));
+		} else {
+			mountCanidates.clear();
+		}
 
 		if (!mountCanidates.isEmpty()) {
 			if (solidSides[EnumFacing.DOWN.ordinal()]) {
@@ -1140,5 +1165,14 @@ public class LogisticsNewRenderPipe implements IHighlightPlacementRenderer {
 	@Override
 	public void renderHighlight(ITubeOrientation orientation) {
 		highlight.render(new I3DOperation[] { LPColourMultiplier.instance(0xFFFFFFFF) });
+	}
+
+	public static List<RenderEntry> getBasicPipeFrameRenderList() {
+		if(pipeFrameRenderList.isEmpty()) {
+			LogisticsTileGenericPipe pipe = new LogisticsTileGenericPipe();
+			pipe.pipe = new PipeItemsBasicLogistics(null);
+			fillObjectsToRenderList(pipeFrameRenderList, pipe, pipe.renderState);
+		}
+		return pipeFrameRenderList;
 	}
 }

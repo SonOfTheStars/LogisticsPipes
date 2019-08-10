@@ -208,7 +208,7 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 			if(itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
 				IFluidHandlerItem capability = itemStack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
 				if(capability != null) {
-					f = Arrays.stream(capability.getTankProperties()).map(IFluidTankProperties::getContents).findFirst().orElse(null);
+					f = Arrays.stream(capability.getTankProperties()).map(IFluidTankProperties::getContents).filter(Objects::nonNull).findFirst().orElse(null);
 				}
 			}
 		}
@@ -257,7 +257,7 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 
 	public int getFreeSpaceInsideTank(IFluidTank tank) {
 		FluidStack liquid = tank.getFluid();
-		if (liquid == null || liquid.getFluid() != null) {
+		if (liquid == null || liquid.getFluid() == null) {
 			return tank.getCapacity();
 		}
 		if (FluidIdentifier.get(liquid).equals(this)) {

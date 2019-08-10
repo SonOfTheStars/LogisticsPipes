@@ -1,30 +1,38 @@
 package logisticspipes.logisticspipes;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.routing.order.LogisticsItemOrderManager;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
 
 public interface IInventoryProvider extends ISendRoutedItem {
 
-	public IInventoryUtil getPointedInventory();
+	@Nullable
+	IInventoryUtil getPointedInventory();
 
-	public IInventoryUtil getPointedInventory(ExtractionMode mode, boolean forExtraction);
+	@Nullable
+	IInventoryUtil getPointedInventory(ExtractionMode mode);
 
-	public IInventoryUtil getSneakyInventory(boolean forExtraction, ModulePositionType slot, int positionInt);
+	@Nullable
+	IInventoryUtil getSneakyInventory(ModulePositionType slot, int positionInt);
 
-	public IInventoryUtil getSneakyInventory(EnumFacing _sneakyOrientation);
+	@Nullable
+	IInventoryUtil getSneakyInventory(@Nonnull EnumFacing direction);
 
-	public IInventoryUtil getUnsidedInventory();
+	@Nullable
+	NeighborTileEntity<TileEntity> getPointedItemHandler();
 
-	public TileEntity getRealInventory();
-
-	public EnumFacing inventoryOrientation();
+	@Nullable
+	EnumFacing getPointedOrientation();
 
 	// to interact and send items you need to know about orders, upgrades, and have the ability to send
 	public LogisticsItemOrderManager getItemOrderManager();

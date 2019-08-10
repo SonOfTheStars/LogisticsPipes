@@ -13,7 +13,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +23,7 @@ import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
+import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.interfaces.routing.IRequireReliableTransport;
@@ -43,7 +43,6 @@ import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.request.RequestTree;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
@@ -53,6 +52,7 @@ import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequestItems, IRequireReliableTransport, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
@@ -66,7 +66,8 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		return null;
 	}
 
@@ -199,18 +200,14 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 
 		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(_world.getWorld(), getX(), getY(), getZ());
 
-		worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-				.map(adjacent -> {
-					EnumFacing direction = adjacent.direction.getOpposite();
-					if (_service.getUpgradeManager(slot, positionInt).hasSneakyUpgrade()) {
-						direction = _service.getUpgradeManager(slot, positionInt).getSneakyOrientation();
-					}
-					return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacent.tileEntity, direction);
-				})
+		worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM)
+				.filter(adjacent -> !adjacent.isLogisticsPipe())
+				.map(neighbor -> neighbor.sneakyInsertion().from(getUpgradeManager()))
+				.map(NeighborTileEntity::getInventoryUtil)
 				.filter(Objects::nonNull)
 				.filter(invUtil -> invUtil.getSizeInventory() > 0)
 				.forEach(invUtil -> {
-					if (_service.getUpgradeManager(slot, positionInt).hasPatternUpgrade()) {
+					if (getUpgradeManager().hasPatternUpgrade()) {
 						createPatternRequest(invUtil);
 					} else {
 						createSupplyRequest(invUtil);
@@ -539,7 +536,12 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 
 	@Override
 	protected ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		return NewGuiHandler.getGui(ActiveSupplierSlot.class).setPatternUpgarde(hasPatternUpgrade()).setSlotArray(slotArray).setMode((_service.getUpgradeManager(slot, positionInt).hasPatternUpgrade() ? getPatternMode() : getSupplyMode()).ordinal()).setLimit(isLimited);
+		final boolean hasPatternUpgrade = hasPatternUpgrade();
+		return NewGuiHandler.getGui(ActiveSupplierSlot.class)
+				.setPatternUpgarde(hasPatternUpgrade)
+				.setSlotArray(slotArray)
+				.setMode((hasPatternUpgrade ? getPatternMode() : getSupplyMode()).ordinal())
+				.setLimit(isLimited);
 	}
 
 	@Override
@@ -568,8 +570,9 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 	}
 
 	public boolean hasPatternUpgrade() {
-		if (_service != null && _service.getUpgradeManager(slot, positionInt) != null) {
-			return _service.getUpgradeManager(slot, positionInt).hasPatternUpgrade();
+		final ISlotUpgradeManager upgradeManager = getUpgradeManager();
+		if (upgradeManager != null) {
+			return upgradeManager.hasPatternUpgrade();
 		}
 		return false;
 	}

@@ -22,7 +22,6 @@ import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ILegacyActiveModule;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.interfaces.routing.IProvideItems;
@@ -168,15 +167,9 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 		return getUpgradeManager().getItemExtractionUpgrade() > 0 ? ItemSendMode.Fast : ItemSendMode.Normal;
 	}
 
-	protected ISlotUpgradeManager getUpgradeManager() {
-		if (_service == null) {
-			return null;
-		}
-		return _service.getUpgradeManager(slot, positionInt);
-	}
-
 	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
+	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit,
+			boolean forcePassive) {
 		return null;
 	}
 
@@ -229,7 +222,7 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 		if (tree.getRequestType() instanceof ItemResource) {
 			possible.add(((ItemResource) tree.getRequestType()).getItem());
 		} else if (tree.getRequestType() instanceof DictResource) {
-			IInventoryUtil inv = _service.getPointedInventory(_extractionMode, true);
+			IInventoryUtil inv = _service.getPointedInventory(_extractionMode);
 			if (inv != null) {
 				Map<ItemIdentifier, Integer> currentInv = inv.getItemsAndCount();
 				possible.addAll(currentInv.keySet().stream()
@@ -260,7 +253,7 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 
 	@Override
 	public void getAllItems(Map<ItemIdentifier, Integer> items, List<IFilter> filters) {
-		IInventoryUtil inv = _service.getPointedInventory(_extractionMode, true);
+		IInventoryUtil inv = _service.getPointedInventory(_extractionMode);
 		if (inv == null) {
 			return;
 		}
@@ -297,7 +290,7 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 	// returns 0 on "unable to do this delivery"
 	private int sendStack(ItemIdentifierStack stack, int maxCount, int destination, IAdditionalTargetInformation info) {
 		ItemIdentifier item = stack.getItem();
-		IInventoryUtil inv = _service.getPointedInventory(_extractionMode, true);
+		IInventoryUtil inv = _service.getPointedInventory(_extractionMode);
 		if (inv == null) {
 			_service.getItemOrderManager().sendFailed();
 			return 0;
@@ -333,7 +326,7 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 		}
 
 		ItemStack removed = inv.getMultipleItems(item, wanted);
-		if (removed == null || removed.isEmpty()) {
+		if (removed.isEmpty()) {
 			_service.getItemOrderManager().sendFailed();
 			return 0;
 		}
@@ -347,7 +340,7 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IL
 
 	private int getTotalItemCount(ItemIdentifier item) {
 
-		IInventoryUtil inv = _service.getPointedInventory(_extractionMode, true);
+		IInventoryUtil inv = _service.getPointedInventory(_extractionMode);
 		if (inv == null) {
 			return 0;
 		}

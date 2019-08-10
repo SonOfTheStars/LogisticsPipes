@@ -24,6 +24,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 
 import org.lwjgl.input.Keyboard;
 
+import logisticspipes.LPConstants;
 import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IPipeServiceProvider;
@@ -31,26 +32,19 @@ import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.modules.ModuleAdvancedExtractor;
-import logisticspipes.modules.ModuleAdvancedExtractorMK2;
-import logisticspipes.modules.ModuleAdvancedExtractorMK3;
 import logisticspipes.modules.ModuleCCBasedItemSink;
 import logisticspipes.modules.ModuleCCBasedQuickSort;
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.modules.ModuleCrafterMK2;
-import logisticspipes.modules.ModuleCrafterMK3;
 import logisticspipes.modules.ModuleCreativeTabBasedItemSink;
 import logisticspipes.modules.ModuleEnchantmentSink;
 import logisticspipes.modules.ModuleEnchantmentSinkMK2;
 import logisticspipes.modules.ModuleExtractor;
-import logisticspipes.modules.ModuleExtractorMk2;
-import logisticspipes.modules.ModuleExtractorMk3;
 import logisticspipes.modules.ModuleItemSink;
 import logisticspipes.modules.ModuleModBasedItemSink;
 import logisticspipes.modules.ModuleOreDictItemSink;
 import logisticspipes.modules.ModulePassiveSupplier;
 import logisticspipes.modules.ModulePolymorphicItemSink;
 import logisticspipes.modules.ModuleProvider;
-import logisticspipes.modules.ModuleProviderMk2;
 import logisticspipes.modules.ModuleQuickSort;
 import logisticspipes.modules.ModuleTerminus;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
@@ -105,28 +99,25 @@ public class ItemModule extends LogisticsItem {
 		registerModule(registry, "quick_sort", ModuleQuickSort::new);
 		registerModule(registry, "terminus", ModuleTerminus::new);
 		registerModule(registry, "extractor_advanced", ModuleAdvancedExtractor::new);
-		registerModule(registry, "extractor_mk2", ModuleExtractorMk2::new);
-		registerModule(registry, "extractor_advanced_mk2", ModuleAdvancedExtractorMK2::new);
-		registerModule(registry, "extractor_mk3", ModuleExtractorMk3::new);
-		registerModule(registry, "extractor_advanced_mk3", ModuleAdvancedExtractorMK3::new);
 		registerModule(registry, "provider", ModuleProvider::new);
-		registerModule(registry, "provider_mk2", ModuleProviderMk2::new);
 		registerModule(registry, "item_sink_mod", ModuleModBasedItemSink::new);
 		registerModule(registry, "item_sink_oredict", ModuleOreDictItemSink::new);
 		registerModule(registry, "enchantment_sink", ModuleEnchantmentSink::new);
 		registerModule(registry, "enchantment_sink_mk2", ModuleEnchantmentSinkMK2::new);
-		registerModule(registry, "quick_sort_cc", ModuleCCBasedQuickSort::new);
-		registerModule(registry, "item_sink_cc", ModuleCCBasedItemSink::new);
+		//registerModule(registry, "quick_sort_cc", ModuleCCBasedQuickSort::new);
+		//registerModule(registry, "item_sink_cc", ModuleCCBasedItemSink::new);
 		registerModule(registry, "crafter", ModuleCrafter::new);
-		registerModule(registry, "crafter_mk2", ModuleCrafterMK2::new);
-		registerModule(registry, "crafter_mk3", ModuleCrafterMK3::new);
 		registerModule(registry, "active_supplier", ModuleActiveSupplier::new);
 		registerModule(registry, "item_sink_creativetab", ModuleCreativeTabBasedItemSink::new);
 	}
 
 	public static void registerModule(IForgeRegistry<Item> registry, String name, @Nonnull Supplier<? extends LogisticsModule> moduleConstructor) {
+		registerModule(registry, name, moduleConstructor, LPConstants.LP_MOD_ID);
+	}
+
+	public static void registerModule(IForgeRegistry<Item> registry, String name, @Nonnull Supplier<? extends LogisticsModule> moduleConstructor, String modID) {
 		Module module = new Module(moduleConstructor);
-		ItemModule mod = LogisticsPipes.setName(new ItemModule(module), String.format("module_%s", name));
+		ItemModule mod = LogisticsPipes.setName(new ItemModule(module), String.format("module_%s", name), modID);
 		LPItems.modules.put(module.getILogisticsModuleClass(), mod); // TODO account for registry overrides → move to init or something
 		registry.register(mod);
 	}

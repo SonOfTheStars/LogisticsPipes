@@ -1,89 +1,90 @@
 buildscript {
     repositories {
-        mavenCentral()
-        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
         maven {
             name = "forge"
             url = "http://files.minecraftforge.net/maven"
         }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
     }
     dependencies {
-		classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '2.3-SNAPSHOT'
+        classpath group: 'gradle.plugin.com.matthewprenger', name: 'CurseGradle', version: '1.3.0'
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: "$kotlin_version"
     }
 }
 
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'kotlin'
 apply plugin: 'net.minecraftforge.gradle.forge'
-//apply plugin: 'curseforge'
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-
-//ant.importBuild 'download-api.xml'
-ant.importBuild 'build-ant.xml'
-
-version = "0.10.1"
-group= "network.rs485.logisticspipes" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "logisticspipes"
-
-def buildby = 'local'
+apply plugin: 'signing'
+apply plugin: 'com.matthewprenger.cursegradle'
 
 def ENV = System.getenv()
-if (ENV.BUILD_NUMBER) {
-    version += "." + ENV.BUILD_NUMBER
-    buildby = 'RS485-Jenkins'
-} else {
-    version += ".99999"
+
+allprojects {
+    group = "network.rs485"
+    version = "0.10.2"
+    ext.builtby = "unknown"
+
+    if (ENV.BUILD_NUMBER) {
+        version = "$version.${ENV.BUILD_NUMBER}"
+    } else if (ENV.VERSION) {
+        version = "$version.${ENV.VERSION}"
+    } else {
+        version = "$version-SNAPSHOT"
+    }
+
+    if (ENV.JENKINS_URL) {
+        ext.builtby = ENV.JENKINS_URL
+    } else if (ENV.JITPACK) {
+        ext.builtby = "JitPack.io"
+        group = ENV.GROUP
+    }
+
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-ant.version = version
-ant.archivesBaseName = archivesBaseName
+subprojects {
+    rootProject.clean.dependsOn tasks.matching { it.name == "clean" }
+}
+
+archivesBaseName = "logisticspipes"
 
 minecraft {
-    version = "1.12.2-14.23.5.2768"
+    version = "$forge_version"
+    mappings = "$mapping_version"
     runDir = "run/assets"
     replace '%VERSION%', project.version
     replace '%MCVERSION%', project.minecraft.version
     replace '%DEBUG%', "false"
     replaceIn "LPConstants.java"
-    mappings = "snapshot_20171120"
+}
+
+sourceSets {
+    main.java.srcDirs += 'common'
+    main.resources.srcDirs += 'resources'
 }
 
 jar {
+    from sourceSets.api.output
     manifest {
-        attributes('FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
-                   'FMLCorePluginContainsFMLMod': 'true',
-                   'Implementation-Vendor': 'RS485',
-                   'Implementation-Title': 'LogisticsPipes',
-                   'Implementation-Version': version,
-                   'Built-By': buildby )
+        attributes(
+                'FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
+                'FMLCorePluginContainsFMLMod': 'true',
+                'FMLAT': 'lp_at.cfg',
+                'Implementation-Vendor': 'RS485',
+                'Implementation-Title': 'LogisticsPipes',
+                'Implementation-Version': version,
+                'Built-By': builtby)
     }
 }
 
-// configure  the source folders
-sourceSets {
-    main {
-        java {
-            srcDir 'common'
-        }
-        resources {
-            srcDir 'resources'
-        }
-    }
-    api {
-        java {
-            srcDir 'dummy'
-            srcDir 'api'
-        }
-    }
-    test {
-        java {
-            srcDir 'test'
-        }
-    }
+sourceJar {
+    from sourceSets.api.allSource
 }
 
 test {
@@ -112,6 +113,11 @@ processResources {
 }
 
 repositories {
+    jcenter()
+    maven {
+        name = "RS485 Cache"
+        url = "https://rs485.network/maven-cache/"
+    }
     maven {
         name = 'CB Repo'
         url = "http://chickenbones.net/maven/"
@@ -121,8 +127,7 @@ repositories {
         url = "http://dvs1.progwml6.com/files/maven"
     }
     maven {
-        name = "player"
-        url = "http://maven.ic2.player.to"
+        url "http://maven.shadowfacts.net/"
     }
     maven {
         url = "https://cc.crzd.me/maven/"
@@ -139,80 +144,183 @@ repositories {
         url = "https://minecraft.curseforge.com/api/maven/"
     }
     maven {
-        name = "buildcraft"
-        url = "https://mod-buildcraft.com/maven"
-    }
-    maven {
 		url "http://maven.amadornes.com/"
 	}
 	maven {
 		name = "CoFH Maven"
-		url = "http://maven.covers1624.net"
+		url = "https://maven.covers1624.net"
 	}
 }
 
 dependencies {
-    deobfCompile "com.mod-buildcraft:buildcraft:7.99.19"
+    compileOnly project(':dummy')
     compileOnly 'org.projectlombok:lombok:1.16.8'
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    compile 'codechicken:NotEnoughItems:1.12.2-2.4.2.240:deobf'
-    compile 'codechicken:CodeChickenLib:1.12.2-3.1.7.340:deobf'
-    compile 'codechicken:EnderStorage:1.12.2-2.4.2.126:deobf'
+    deobfCompile 'com.mod-buildcraft:buildcraft:7.99.+'
+    implementation 'net.shadowfacts:Forgelin:1.8.+'
+    implementation 'MCMultiPart2:MCMultiPart:2.5.+:deobf'
+    deobfProvided 'mezz.jei:jei_1.12.2:4.15.0.268:api'
+    // already in environment because of NEI
+//    runtime 'mezz.jei:jei_1.12.2:4.15.0.268'
+    compile 'codechicken:CodeChickenLib:1.12.2-3.2.+:deobf'
+    compile 'codechicken:NotEnoughItems:1.12.2-2.4.+:deobf'
+    compile 'codechicken:EnderStorage:1.12.2-2.4.+:deobf'
     compile 'net.industrial-craft:industrialcraft-2:2.8.97-ex112:api'
-    compile "li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+:api"
-    compile "appeng:appliedenergistics2:rv5-stable-11:api"
-    compileOnly "dan200.computercraft:ComputerCraft:1.80pr1-build5"
-	compileOnly "cofh:CoFHCore:1.12.2-4.5.2.+:universal"
-    compileOnly "cofh:ThermalDynamics:1.12.2-2.5.1.+:universal"
-    deobfCompile "thaumcraft:Thaumcraft:1.12.2:6.1.BETA26"
-    runtimeOnly "baubles:Baubles:1.12:1.5.2"
-	deobfCompile "MCMultiPart2:MCMultiPart:2.5.3"
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
-    testCompile 'org.hamcrest:hamcrest-junit:2.0.0.0'
+    compile 'li.cil.oc:OpenComputers:MC1.12.2-1.7.+:api'
+    compile 'appeng:appliedenergistics2:rv6-stable-6:api'
+    compile 'cofh:CoFHCore:1.12.2-4.+:deobf'
+    compile 'cofh:CoFHWorld:1.12.2-1.2+:deobf'
+    compile 'cofh:RedstoneFlux:1.12-2.1.+:deobf'
+    compile 'cofh:ThermalDynamics:1.12.2-2.+:deobf'
+    compile 'cofh:ThermalFoundation:1.12.2-2.6.+:deobf'
+    compile 'cofh:ThermalExpansion:1.12.2-5.+:deobf'
+    compileOnly 'dan200.computercraft:ComputerCraft:1.80pr1-build5'
+    deobfCompile 'thaumcraft:Thaumcraft:1.12.2:6.1.BETA26'
+    runtimeOnly 'baubles:Baubles:1.12:1.5.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.4.+'
 }
 
-task deobfJar(type: Jar, dependsOn: 'jar') {
-    from sourceSets.main.output
-    classifier = 'dev'
-    manifest {
-        attributes(
-            'FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
-            'FMLCorePluginContainsFMLMod': 'true',
-            'Implementation-Vendor': 'RS485',
-            'Implementation-Title': 'LogisticsPipes',
-            'Implementation-Version': version,
-            'Built-By': buildby)
+tasks.withType(Test) {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
     }
 }
 
-task copyLPDummy(type: Copy) {
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    from sourceSets.api.output
+    classifier = 'deobf'
+    manifest {
+        attributes(
+                'FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
+                'FMLCorePluginContainsFMLMod': 'true',
+                'FMLAT': 'lp_at.cfg',
+                'Implementation-Vendor': 'RS485',
+                'Implementation-Title': 'LogisticsPipes',
+                'Implementation-Version': version,
+                'Built-By': builtby)
+    }
+}
+
+task apiJar(type: Jar, dependsOn: apiClasses) {
+    from sourceSets.api.output
+    from sourceSets.api.allSource
+    classifier = "api"
+    jar.dependsOn += "apiJar"
+}
+
+task copyLPDummyServer(type: Copy) {
+    from 'LogisticsPipes_dummy.jar'
+    into 'run/assets_server/mods'
+}
+
+task copyLPDummy(dependsOn: copyLPDummyServer, type: Copy) {
     from 'LogisticsPipes_dummy.jar'
     into 'run/assets/mods'
 }
 
-//task sourceJar(type: Jar, dependsOn: 'jar') {
-//    from sourceSets.main.allSource
-//    classifier = 'src'
-//}
+curseforge {
+    apiKey = project.hasProperty('LogisticsPipes.curseForgeApiKey') ? project.findProperty("LogisticsPipes.curseForgeApiKey") : '0'
+    project {
+        id = "232838"
+        changelog = project.hasProperty('changelog') ? project.findProperty('changelog') : ''
+        releaseType = 'beta'
+        relations {
+            requiredDependency 'codechicken-lib-1-8'
+            requiredDependency 'shadowfacts-forgelin'
+        }
 
-//curse {
-//    displayName = 'Logistics Pipes 0.10.0 (BC7) build ' + System.getenv().BUILD_NUMBER
-//
-//    projectId = '232838'
-//    apiKey = project.hasProperty('curseForgeApiKey') ? project.curseForgeApiKey : ''
-//    releaseType = 'release'
-//
-//    changelog = project.hasProperty('changelog') ? project.changelog : ''
-//}
-
-artifacts {
-    archives deobfJar
-    archives sourceJar
-    archives jar
+        mainArtifact(jar) {
+            displayName = 'Logistics Pipes ' + project.version
+        }
+    }
 }
 
-//tasks.compileApiJava.dependsOn('extract')
-tasks.compileJava.dependsOn('loadFingerprints')
-tasks.processResources.dependsOn('integrateLang')
-tasks.assemble.dependsOn('deobfJar', 'sourceJar', 'signJars')
+artifacts {
+    archives apiJar
+    archives jar
+    archives deobfJar
+    archives sourceJar
+}
+
+task enableSigningTasks {
+    doFirst {
+        tasks.withType(Sign) {
+            enabled = true
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign apiJar
+    sign jar
+    sign deobfJar
+    sign sourceJar
+}
+
+task sign {
+    dependsOn enableSigningTasks
+    dependsOn(tasks.withType(Sign))
+}
+
+tasks.withType(Sign) {
+    // disable signing by default
+    enabled = false
+    mustRunAfter enableSigningTasks
+    ext.useJarsigner = (name != "signSourceJar") // dont sign source jar, it doesn't have classes
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.allTasks.each {
+        if (it instanceof Sign && it.useJarsigner) {
+            def inputFiles = it.getInputFiles()
+            it.doFirst {
+                // see https://ant.apache.org/manual/Tasks/signjar.html for arguments
+                // ForgeGradle also uses ant.signjar: https://fckaf.de/DCw
+                inputFiles.each { file ->
+                    ant.signjar(
+                            jar: file,
+                            alias: "1",
+                            storetype: findProperty("LogisticsPipes.storetype"),
+                            keystore: findProperty("LogisticsPipes.keystore"),
+                            storepass: findProperty("LogisticsPipes.storepass"),
+                            verbose: "true",
+                            preservelastmodified: "true"
+                    )
+                }
+            }
+        }
+    }
+}
+
+task downloadLanguage(type: Download) {
+    url "https://github.com/RS485/LogisticsPipes-Language/archive/master.zip"
+    output new File(temporaryDir, "language.zip")
+}
+
+task languageMain(dependsOn: downloadLanguage, type: Copy) {
+    from zipTree(downloadLanguage.output)
+    into "$buildDir/resources/main/assets/logisticspipes/lang/"
+    include "*/*.lang"
+
+    includeEmptyDirs false
+    eachFile { fcd -> fcd.relativePath = new RelativePath(!fcd.isDirectory(), fcd.relativePath.segments.drop(1)) }
+}
+
+task languageBook(dependsOn: downloadLanguage, type: Copy) {
+    from zipTree(downloadLanguage.output)
+    into "$buildDir/resources/main/assets/logisticspipes/book/"
+    include "*/book/"
+
+    includeEmptyDirs false
+    eachFile { fcd -> fcd.relativePath = new RelativePath(!fcd.isDirectory(), fcd.relativePath.segments.drop(2)) }
+}
+
+task language(dependsOn: [languageMain, languageBook], type: Copy) {
+    processResources.dependsOn language
+}
+
+install.repositories.mavenInstaller.pom.whenConfigured { pom ->
+    pom.dependencies.clear()
+}

@@ -6,6 +6,7 @@ import net.minecraft.launchwrapper.Launch;
 
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 
+//@IFMLLoadingPlugin.SortingIndex(1001) TODO: For next MC update. Changing this now, will change ASM check sums as well.
 public class LogisticsPipesCoreLoader implements IFMLLoadingPlugin {
 
 	public LogisticsPipesCoreLoader() throws Exception {
@@ -24,11 +25,6 @@ public class LogisticsPipesCoreLoader implements IFMLLoadingPlugin {
 	}
 
 	@Override
-	public String getAccessTransformerClass() {
-		return "logisticspipes.asm.LogisticsAccessTransformer";
-	}
-
-	@Override
 	public String getModContainerClass() {
 		return null;
 	}
@@ -41,5 +37,10 @@ public class LogisticsPipesCoreLoader implements IFMLLoadingPlugin {
 	@Override
 	public void injectData(Map<String, Object> data) {
 
+	}
+
+	@Override
+	public String getAccessTransformerClass() {
+		return null;
 	}
 }
