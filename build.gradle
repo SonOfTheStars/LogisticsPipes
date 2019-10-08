@@ -150,6 +150,10 @@ repositories {
 		name = "CoFH Maven"
 		url = "https://maven.covers1624.net"
 	}
+    maven{
+        name = "Therealfarfetched"
+        url = "https://maven.therealfarfetchd.dev/"
+    }
 }
 
 dependencies {
@@ -158,6 +162,7 @@ dependencies {
     deobfCompile 'com.mod-buildcraft:buildcraft:7.99.+'
     implementation 'net.shadowfacts:Forgelin:1.8.+'
     implementation 'MCMultiPart2:MCMultiPart:2.5.+:deobf'
+    implementation 'therealfarfetchd.qcommon:croco:1.0.5-6'
     deobfProvided 'mezz.jei:jei_1.12.2:4.15.0.268:api'
     // already in environment because of NEI
 //    runtime 'mezz.jei:jei_1.12.2:4.15.0.268'
@@ -177,6 +182,7 @@ dependencies {
     deobfCompile 'thaumcraft:Thaumcraft:1.12.2:6.1.BETA26'
     runtimeOnly 'baubles:Baubles:1.12:1.5.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.4.+'
+    compile "org.jetbrains.kotlin:kotlin-stdlib"
 }
 
 tasks.withType(Test) {
