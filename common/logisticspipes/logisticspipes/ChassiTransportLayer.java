@@ -1,10 +1,10 @@
 package logisticspipes.logisticspipes;
 
+import net.minecraft.util.EnumFacing;
+
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.utils.SinkReply;
-
-import net.minecraft.util.EnumFacing;
 
 public class ChassiTransportLayer extends TransportLayer {
 
@@ -41,7 +41,7 @@ public class ChassiTransportLayer extends TransportLayer {
 
 		if (reply.maxNumberOfItems > 0 && item.getItemIdentifierStack().getStackSize() > reply.maxNumberOfItems) {
 			EnumFacing o = _chassiPipe.getPointedOrientation();
-			if (o == null || o == null) {
+			if (o == null) {
 				o = EnumFacing.UP;
 			}
 

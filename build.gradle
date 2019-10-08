@@ -57,7 +57,7 @@ archivesBaseName = "logisticspipes"
 minecraft {
     version = "$forge_version"
     mappings = "$mapping_version"
-    runDir = "run/assets"
+    runDir = 'run'
     replace '%VERSION%', project.version
     replace '%MCVERSION%', project.minecraft.version
     replace '%DEBUG%', "false"
@@ -207,16 +207,6 @@ task apiJar(type: Jar, dependsOn: apiClasses) {
     from sourceSets.api.allSource
     classifier = "api"
     jar.dependsOn += "apiJar"
-}
-
-task copyLPDummyServer(type: Copy) {
-    from 'LogisticsPipes_dummy.jar'
-    into 'run/assets_server/mods'
-}
-
-task copyLPDummy(dependsOn: copyLPDummyServer, type: Copy) {
-    from 'LogisticsPipes_dummy.jar'
-    into 'run/assets/mods'
 }
 
 curseforge {

@@ -1,9 +1,9 @@
 package logisticspipes.items;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.EntityPlayer;
@@ -32,8 +32,6 @@ import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.modules.ModuleAdvancedExtractor;
-import logisticspipes.modules.ModuleCCBasedItemSink;
-import logisticspipes.modules.ModuleCCBasedQuickSort;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.ModuleCreativeTabBasedItemSink;
 import logisticspipes.modules.ModuleEnchantmentSink;
@@ -208,10 +206,10 @@ public class ItemModule extends LogisticsItem {
 				if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
 					NBTTagList nbttaglist = nbt.getTagList("informationList", 8);
 					for (int i = 0; i < nbttaglist.tagCount(); i++) {
-						Object nbttag = nbttaglist.tagList.get(i);
+						Object nbttag = nbttaglist.get(i);
 						String data = ((NBTTagString) nbttag).getString();
 						if (data.equals("<inventory>") && i + 1 < nbttaglist.tagCount()) {
-							nbttag = nbttaglist.tagList.get(i + 1);
+							nbttag = nbttaglist.get(i + 1);
 							data = ((NBTTagString) nbttag).getString();
 							if (data.startsWith("<that>")) {
 								String prefix = data.substring(6);

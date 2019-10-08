@@ -20,19 +20,16 @@ import logisticspipes.utils.string.StringUtils;
 import logisticspipes.utils.tuples.Pair;
 
 public class GuiSelectSatellitePopup extends SubGuiScreen {
+
 	String GUI_LANG_KEY = "gui.popup.selectsatellite.";
 
-	private boolean fluidSatellites;
 	private final Consumer<UUID> handleResult;
 	private List<Pair<String, UUID>> pipeList = Collections.EMPTY_LIST;
 	private final TextListDisplay textList;
-	private BlockPos position;
 
 	public GuiSelectSatellitePopup(BlockPos pos, boolean fluidSatellites, Consumer<UUID> handleResult) {
 		super(150, 170, 0, 0);
-		this.fluidSatellites = fluidSatellites;
 		this.handleResult = handleResult;
-		this.position = pos;
 		this.textList = new TextListDisplay(this, 6, 16, 6, 30, 12, new TextListDisplay.List() {
 
 			@Override
@@ -50,7 +47,7 @@ public class GuiSelectSatellitePopup extends SubGuiScreen {
 				return 0xFFFFFF;
 			}
 		});
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestSatellitePipeListPacket.class).setFlag(fluidSatellites).setBlockPos(this.position));
+		MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestSatellitePipeListPacket.class).setFlag(fluidSatellites).setBlockPos(pos));
 	}
 
 	protected void drawTitle() {
@@ -64,7 +61,7 @@ public class GuiSelectSatellitePopup extends SubGuiScreen {
 		buttonList.clear();
 		buttonList.add(new SmallGuiButton(0, xCenter + 16, bottom - 27, 50, 10, StringUtils.translate(GUI_LANG_KEY + "select")));
 		buttonList.add(new SmallGuiButton(1, xCenter + 16, bottom - 15, 50, 10, StringUtils.translate(GUI_LANG_KEY + "exit")));
-		buttonList.add(new SmallGuiButton(2, xCenter - 66, bottom - 27, 50, 10,  StringUtils.translate(GUI_LANG_KEY + "unset")));
+		buttonList.add(new SmallGuiButton(2, xCenter - 66, bottom - 27, 50, 10, StringUtils.translate(GUI_LANG_KEY + "unset")));
 		buttonList.add(new SmallGuiButton(4, xCenter - 12, bottom - 27, 25, 10, "/\\"));
 		buttonList.add(new SmallGuiButton(5, xCenter - 12, bottom - 15, 25, 10, "\\/"));
 	}
@@ -100,7 +97,7 @@ public class GuiSelectSatellitePopup extends SubGuiScreen {
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
 		if (guibutton.id == 0) { // Select
 			int selected = textList.getSelected();
-			if(selected >= 0) {
+			if (selected >= 0) {
 				handleResult.accept(pipeList.get(selected).getValue2());
 				exitGui();
 			}

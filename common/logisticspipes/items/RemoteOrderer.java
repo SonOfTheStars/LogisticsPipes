@@ -1,6 +1,7 @@
 package logisticspipes.items;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.util.ITooltipFlag;
@@ -54,8 +55,9 @@ public class RemoteOrderer extends LogisticsItem {
 		}
 	}
 
+	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand handIn) {
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand handIn) {
 		ItemStack par1ItemStack = player.inventory.getCurrentItem();
 		if (par1ItemStack.isEmpty()) {
 			return null;
@@ -125,7 +127,7 @@ public class RemoteOrderer extends LogisticsItem {
 	}
 
 	@Override
-	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
+	public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
 		if (isInCreativeTab(tab)) {
 			for (int meta = 0; meta < 17; meta++) {
 				items.add(new ItemStack(this, 1, meta));

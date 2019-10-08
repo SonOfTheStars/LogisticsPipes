@@ -2,6 +2,7 @@ package logisticspipes.items;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -20,7 +21,6 @@ import logisticspipes.pipes.signs.CraftingPipeSign;
 import logisticspipes.pipes.signs.IPipeSign;
 import logisticspipes.pipes.signs.ItemAmountPipeSign;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.string.StringUtils;
 
 public class ItemPipeSignCreator extends LogisticsItem {
 
@@ -35,6 +35,7 @@ public class ItemPipeSignCreator extends LogisticsItem {
 		setHasSubtypes(true);
 	}
 
+	@Nonnull
 	@Override
 	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		if (MainProxy.isClient(world)) {
@@ -60,7 +61,7 @@ public class ItemPipeSignCreator extends LogisticsItem {
 			return EnumActionResult.FAIL;
 		}
 
-		if(!(((LogisticsTileGenericPipe) tile).pipe instanceof CoreRoutedPipe)) {
+		if (!(((LogisticsTileGenericPipe) tile).pipe instanceof CoreRoutedPipe)) {
 			return EnumActionResult.FAIL;
 		}
 
@@ -110,8 +111,9 @@ public class ItemPipeSignCreator extends LogisticsItem {
 		return signTypes.size();
 	}
 
+	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(final World world, final EntityPlayer player, final EnumHand hand) {
+	public ActionResult<ItemStack> onItemRightClick(final World world, final EntityPlayer player, @Nonnull final EnumHand hand) {
 		ItemStack stack = player.inventory.getCurrentItem();
 		if (MainProxy.isClient(world)) {
 			return ActionResult.newResult(EnumActionResult.PASS, stack);

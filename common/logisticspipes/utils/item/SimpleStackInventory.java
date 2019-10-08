@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -11,15 +10,8 @@ package logisticspipes.utils.item;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
-
 import javax.annotation.Nonnull;
 
-import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.routing.ISaveState;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.ISimpleInventoryEventHandler;
-
-import logisticspipes.utils.tuples.Pair;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -30,6 +22,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
 
+import logisticspipes.LogisticsPipes;
+import logisticspipes.interfaces.routing.ISaveState;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.utils.ISimpleInventoryEventHandler;
+import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
 public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pair<ItemStack, Integer>> {
@@ -54,19 +51,21 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 
 	@Override
 	public boolean isEmpty() {
-		for(ItemStack stack: _contents) {
-			if(stack == null || !stack.isEmpty()) {
+		for (ItemStack stack : _contents) {
+			if (stack == null || !stack.isEmpty()) {
 				return false;
 			}
 		}
 		return true;
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack getStackInSlot(int i) {
 		return _contents[i] != null ? _contents[i] : ItemStack.EMPTY;
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack decrStackSize(int slot, int count) {
 		if (_contents[slot].isEmpty()) {
@@ -92,11 +91,13 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 		}
 	}
 
+	@Nonnull
 	@Override
 	public String getName() {
 		return _name;
 	}
 
+	@Nonnull
 	@Override
 	public ITextComponent getDisplayName() {
 		return null;
@@ -115,15 +116,15 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 	}
 
 	@Override
-	public boolean isUsableByPlayer(EntityPlayer entityplayer) {
+	public boolean isUsableByPlayer(@Nonnull EntityPlayer entityplayer) {
 		return false;
 	}
 
 	@Override
-	public void openInventory(EntityPlayer player) {}
+	public void openInventory(@Nonnull EntityPlayer player) {}
 
 	@Override
-	public void closeInventory(EntityPlayer player) {}
+	public void closeInventory(@Nonnull EntityPlayer player) {}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbttagcompound) {
@@ -198,11 +199,10 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 	}
 
 	public void removeListener(ISimpleInventoryEventHandler listner) {
-		if (_listener.contains(listner)) {
-			_listener.remove(listner);
-		}
+		_listener.remove(listner);
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack removeStackFromSlot(int i) {
 		if (_contents[i].isEmpty()) {
@@ -270,7 +270,7 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 	}
 
 	@Override
-	public boolean isItemValidForSlot(int i, ItemStack itemstack) {
+	public boolean isItemValidForSlot(int i, @Nonnull ItemStack itemstack) {
 		return true;
 	}
 
@@ -303,6 +303,7 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 		return true;
 	}
 
+	@Nonnull
 	@Override
 	public Iterator<Pair<ItemStack, Integer>> iterator() {
 		final Iterator<ItemStack> iter = Arrays.asList(_contents).iterator();

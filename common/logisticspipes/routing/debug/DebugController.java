@@ -9,7 +9,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
+
+import net.minecraft.command.ICommandSender;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.text.TextComponentString;
 
 import logisticspipes.commands.chathelper.LPChatListener;
 import logisticspipes.interfaces.IRoutingDebugAdapter;
@@ -32,10 +35,6 @@ import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.ServerRouter;
 import logisticspipes.ticks.QueuedTasks;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
-
 public class DebugController implements IRoutingDebugAdapter {
 
 	private static HashMap<ICommandSender, DebugController> instances = new HashMap<>();
@@ -54,10 +53,10 @@ public class DebugController implements IRoutingDebugAdapter {
 		return DebugController.instances.get(sender);
 	}
 
-	private static enum DebugWaitState {
+	private enum DebugWaitState {
 		LOOP,
 		CONTINUE,
-		NOWAIT;
+		NOWAIT
 	}
 
 	private Thread oldThread = null;

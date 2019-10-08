@@ -1,6 +1,5 @@
 package logisticspipes.renderer.newpipe;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +30,7 @@ public class LogisticsNewPipeItemBoxRenderer {
 
 	@SideOnly(Side.CLIENT)
 	public void doRenderItem(ItemStack itemstack, float light, double x, double y, double z, double boxScale, double yaw, double pitch, double yawForPitch) {
-		if(LogisticsNewRenderPipe.innerTransportBox == null) return;
+		if (LogisticsNewRenderPipe.innerTransportBox == null) return;
 		GL11.glPushMatrix();
 
 		if (renderList == -1) {

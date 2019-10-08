@@ -5,19 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import logisticspipes.utils.gui.GuiGraphics;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.inventory.Slot;
 
 import lombok.Setter;
 
+import logisticspipes.utils.gui.GuiGraphics;
+
 public class GuiExtentionController {
 
 	public enum GuiSide {
 		LEFT,
-		RIGHT;
+		RIGHT
 	}
 
 	private final List<GuiExtention> extentions = new ArrayList<>();

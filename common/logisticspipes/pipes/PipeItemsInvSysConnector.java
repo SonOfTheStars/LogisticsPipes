@@ -153,7 +153,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 				}
 				int itemAmount = amounts.get(ident);
 				List<ItemRoutingInformation> needs = itemsOnRoute.get(ident);
-				for (Iterator<ItemRoutingInformation> iterator = needs.iterator(); iterator.hasNext();) {
+				for (Iterator<ItemRoutingInformation> iterator = needs.iterator(); iterator.hasNext(); ) {
 					ItemRoutingInformation need = iterator.next();
 					if (need.getItem().getStackSize() <= itemAmount) {
 						if (!useEnergy(6)) {
@@ -185,7 +185,6 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 						if (amounts.containsKey(ident)) {
 							itemAmount = amounts.get(ident);
 						} else {
-							itemAmount = 0;
 							break;
 						}
 					}
@@ -267,7 +266,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
 		nbttagcompound.setInteger("resistance", resistance);
-		if(connectedChannel != null) {
+		if (connectedChannel != null) {
 			nbttagcompound.setString("connectedChannel", connectedChannel.toString());
 		}
 	}
@@ -276,7 +275,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	public void readFromNBT(NBTTagCompound nbttagcompound) {
 		super.readFromNBT(nbttagcompound);
 		resistance = nbttagcompound.getInteger("resistance");
-		if(nbttagcompound.hasKey("connectedChannel")) {
+		if (nbttagcompound.hasKey("connectedChannel")) {
 			connectedChannel = UUID.fromString(nbttagcompound.getString("connectedChannel"));
 		} else {
 			connectedChannel = null;
@@ -337,6 +336,9 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 		if (info.getItem().getStackSize() == 0) {
 			return; // system.throw("why you try to insert empty stack?");
 		}
+		if (info.destinationint < 0) {
+			return; // The item does not have a destination anymore, maybe the target pipe has been removed... We cannot do anything anymore so just let it be.
+		}
 		if (isInventoryConnected(tile)) {
 			if (hasRemoteConnection()) {
 				List<CoreRoutedPipe> connectedPipes = SimpleServiceLocator.connectionManager.getConnectedPipes(getRouter());
@@ -349,7 +351,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 						.filter(triplet -> triplet.getValue2() != null && triplet.getValue3() != null)
 						.filter(triplet -> triplet.getValue2().exitOrientation != triplet.getValue3().exitOrientation)
 						.min(Comparator.comparing(trip -> trip.getValue2().blockDistance)).map(Pair::getValue1);
-				if(!bestConnection.isPresent()) {
+				if (!bestConnection.isPresent()) {
 					bestConnection = connectedPipes.stream()
 							.map(con -> new Pair<>(
 									con,
@@ -358,7 +360,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 							.filter(triplet -> triplet.getValue2() != null)
 							.min(Comparator.comparing(trip -> trip.getValue2().blockDistance)).map(Pair::getValue1);
 				}
-				if(bestConnection.isPresent() && bestConnection.get() instanceof IChannelRoutingConnection) {
+				if (bestConnection.isPresent() && bestConnection.get() instanceof IChannelRoutingConnection) {
 					IChannelRoutingConnection pipe = (IChannelRoutingConnection) bestConnection.get();
 					pipe.addItem(info);
 					spawnParticle(Particles.OrangeParticle, 4);

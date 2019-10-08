@@ -7,7 +7,6 @@ import net.minecraft.util.EnumFacing;
 
 import lombok.Getter;
 
-import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.items.ItemUpgrade;
 import logisticspipes.pipes.PipeLogisticsChassi;
@@ -148,7 +147,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 			} else if (upgrade instanceof ItemStackExtractionUpgrade) {
 				itemStackExtractionUpgrade += inv.getStackInSlot(i).getCount();
 			}
-			if(upgrade instanceof IConfigPipeUpgrade) {
+			if (upgrade instanceof IConfigPipeUpgrade) {
 				guiUpgrades[i] = true;
 			}
 		}
@@ -176,7 +175,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 
 	private boolean updateModule(int slot, IPipeUpgrade[] upgrades, IInventory inv) {
 		ItemStack stackInSlot = inv.getStackInSlot(slot);
-		if(stackInSlot.getItem() instanceof ItemUpgrade) {
+		if (stackInSlot.getItem() instanceof ItemUpgrade) {
 			upgrades[slot] = ((ItemUpgrade) stackInSlot.getItem()).getUpgradeForItem(stackInSlot, upgrades[slot]);
 		} else {
 			upgrades[slot] = null;

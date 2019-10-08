@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import logisticspipes.LPItems;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
@@ -15,10 +14,12 @@ import net.minecraft.init.Blocks;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import logisticspipes.LPConstants;
+import logisticspipes.LPItems;
 import logisticspipes.items.ItemUpgrade;
 import logisticspipes.items.LogisticsItemCard;
 import logisticspipes.network.PacketHandler;
@@ -63,9 +64,8 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 		addHiddenSlot(dummy.addRestrictedSlot(0, pipe.container.logicController.diskInv, 14, 36, LPItems.disk)); //Keep it for now, but hidden. Maybe it will be used again later
 		Tasks tasks = new Tasks();
 
-
 		//Here order doesn't matter/can be changed to reorganise tabs
-		if(LPConstants.DEBUG) {
+		if (LPConstants.DEBUG) {
 			addTab(upgrades);
 			addTab(security);
 			addTab(statistics);
@@ -95,7 +95,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 						return false;
 					}
 					if (itemStack.getItem() instanceof ItemUpgrade) {
-						if (!((ItemUpgrade)itemStack.getItem()).getUpgradeForItem(itemStack, null).isAllowedForPipe(pipe)) {
+						if (!((ItemUpgrade) itemStack.getItem()).getUpgradeForItem(itemStack, null).isAllowedForPipe(pipe)) {
 							return false;
 						}
 					} else {
@@ -111,7 +111,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 						return false;
 					}
 					if (itemStack.getItem() instanceof ItemUpgrade) {
-						IPipeUpgrade upgrade = ((ItemUpgrade)itemStack.getItem()).getUpgradeForItem(itemStack, null);
+						IPipeUpgrade upgrade = ((ItemUpgrade) itemStack.getItem()).getUpgradeForItem(itemStack, null);
 						if (!(upgrade instanceof SneakyUpgradeConfig)) {
 							return false;
 						}
@@ -130,11 +130,11 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 		public void initTab() {
 			int x = 0;
 			int y = 0;
-			for(int i=0;i < upgradeConfig.length;i++) {
+			for (int i = 0; i < upgradeConfig.length; i++) {
 				upgradeConfig[i] = addButton(new SmallGuiButton(20 + i, guiLeft + 13 + x, guiTop + 61 + y, 10, 10, "!"));
 				upgradeConfig[i].visible = pipe.getOriginalUpgradeManager().hasGuiUpgrade(i);
 				x += 18;
-				if(x > 160 && y == 0) {
+				if (x > 160 && y == 0) {
 					x = 0;
 					y = 46;
 				}
@@ -144,7 +144,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 		@Override
 		public void checkButton(GuiButton button, boolean isTabActive) {
 			super.checkButton(button, isTabActive);
-			for(int i=0;i<upgradeConfig.length;i++) {
+			for (int i = 0; i < upgradeConfig.length; i++) {
 				upgradeConfig[i].visible &= pipe.getOriginalUpgradeManager().hasGuiUpgrade(i);
 			}
 		}
@@ -170,7 +170,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 
 		@Override
 		public void buttonClicked(GuiButton button) {
-			for(int i=0;i<upgradeConfig.length;i++) {
+			for (int i = 0; i < upgradeConfig.length; i++) {
 				if (upgradeConfig[i] == button) {
 					MainProxy.sendPacketToServer(PacketHandler.getPacket(OpenUpgradePacket.class).setSlot(upgradeslot[i]));
 				}
@@ -263,7 +263,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 
 			int sessionxCenter = 85;
 			int lifetimexCenter = 140;
-			String s = null;
+			String s;
 
 			fontRenderer.drawString(StringUtils.translate(PREFIX + "Session"), sessionxCenter - fontRenderer
 					.getStringWidth(StringUtils.translate(PREFIX + "Session")) / 2, 40, 0x303030);
@@ -363,10 +363,12 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 
 		@Override
 		public void initTab() {
+			Keyboard.enableRepeatEvents(true);
+
 			leftButton = addButton(new SmallGuiButton(1, guiLeft + 95, guiTop + 26, 10, 10, "<"));
 			rightButton = addButton(new SmallGuiButton(2, guiLeft + 165, guiTop + 26, 10, 10, ">"));
 			if (_itemDisplay_5 == null) {
-				_itemDisplay_5 = new ItemDisplay(null, fontRenderer, GuiPipeController.this, null, 10, 40, 20, 60, 0, 0, 0, new int[]{1, 1, 1, 1}, true);
+				_itemDisplay_5 = new ItemDisplay(null, fontRenderer, GuiPipeController.this, null, 10, 40, 20, 60, 0, 0, 0, new int[] { 1, 1, 1, 1 }, true);
 			}
 			_itemDisplay_5.reposition(10, 40, 20, 60, 0, 0);
 		}
@@ -418,8 +420,8 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 			for (int i = start; i < start + 3 && i < pipe.getClientSideOrderManager().size(); i++) {
 				IOrderInfoProvider order = pipe.getClientSideOrderManager().get(i);
 				ItemIdentifier target = order.getTargetType();
-				String s = "";
-				if(target != null) {
+				String s;
+				if (target != null) {
 					s = target.getFriendlyName();
 					fontRenderer.drawString(s, 35, stringPos, 0x303030);
 				}

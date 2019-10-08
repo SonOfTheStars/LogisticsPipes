@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.ColorSlot;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.DummySlot;
@@ -17,8 +18,6 @@ import logisticspipes.utils.gui.FluidSlot;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class DummyContainerSlotClick extends ModernPacket {
@@ -50,7 +49,7 @@ public class DummyContainerSlotClick extends ModernPacket {
 	public void processPacket(EntityPlayer player) {
 		if (player instanceof EntityPlayerMP && ((EntityPlayerMP) player).openContainer instanceof DummyContainer) {
 			DummyContainer container = (DummyContainer) ((EntityPlayerMP) player).openContainer;
-			Slot slot = (Slot) container.inventorySlots.get(slotId);
+			Slot slot = container.inventorySlots.get(slotId);
 			if (slot instanceof DummySlot || slot instanceof ColorSlot || slot instanceof FluidSlot) {
 				container.handleDummyClick(slot, slotId, stack, button, ClickType.PICKUP, player);
 			}

@@ -1,12 +1,11 @@
 package logisticspipes.asm;
 
-import logisticspipes.LPConstants;
-import logisticspipes.routing.pathfinder.changedetection.TEControl;
-
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
 
 import lombok.SneakyThrows;
+
+import logisticspipes.LPConstants;
+import logisticspipes.routing.pathfinder.changedetection.TEControl;
 
 public class LogisticsASMHookClass {
 

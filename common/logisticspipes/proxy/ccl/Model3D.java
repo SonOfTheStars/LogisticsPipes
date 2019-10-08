@@ -2,33 +2,17 @@ package logisticspipes.proxy.ccl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.object3d.interfaces.I3DOperation;
-import logisticspipes.proxy.object3d.interfaces.IBounds;
-import logisticspipes.proxy.object3d.interfaces.IModel3D;
-import logisticspipes.proxy.object3d.interfaces.IVec3;
-import logisticspipes.proxy.object3d.interfaces.TextureTransformation;
-import logisticspipes.renderer.state.PipeRenderState;
-import logisticspipes.utils.math.Vector3f;
-
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
 
-import net.minecraftforge.client.model.pipeline.UnpackedBakedQuad;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -48,9 +32,13 @@ import codechicken.lib.vec.uv.IconTransformation;
 import codechicken.lib.vec.uv.UVTransformation;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
+
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.object3d.interfaces.I3DOperation;
+import logisticspipes.proxy.object3d.interfaces.IBounds;
+import logisticspipes.proxy.object3d.interfaces.IModel3D;
+import logisticspipes.proxy.object3d.interfaces.IVec3;
 
 public class Model3D implements IModel3D {
 
@@ -86,12 +74,12 @@ public class Model3D implements IModel3D {
 		for (I3DOperation op : i3dOperations) {
 			list.add((IVertexOperation) op.getOriginal());
 		}
-		model.render(CCRenderState.instance(), list.toArray(new IVertexOperation[list.size()]));
+		model.render(CCRenderState.instance(), list.toArray(new IVertexOperation[0]));
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	@SneakyThrows({IllegalAccessException.class})
+	@SneakyThrows({ IllegalAccessException.class })
 	public List<BakedQuad> renderToQuads(VertexFormat format, I3DOperation... i3dOperations) {
 		List<IVertexOperation> list = new ArrayList<>();
 		Set<String> hash = new HashSet<>();
@@ -102,7 +90,7 @@ public class Model3D implements IModel3D {
 			IVertexOperation iVertexOperation = (IVertexOperation) op.getOriginal();
 			list.add(iVertexOperation);
 			if (iVertexOperation instanceof IconTransformation) {
-				hash.add(((IconTransformation)iVertexOperation).icon.toString());
+				hash.add(((IconTransformation) iVertexOperation).icon.toString());
 			} else if (iVertexOperation instanceof Rotation) {
 				hash.add(iVertexOperation.toString());
 			} else if (iVertexOperation instanceof Scale) {
@@ -159,7 +147,7 @@ public class Model3D implements IModel3D {
 	public IBounds bounds() {
 		return wrap(model.bounds());
 	}
-	
+
 	private IBounds wrap(final Cuboid6 bounds) {
 		return new IBounds() {
 
@@ -221,7 +209,7 @@ public class Model3D implements IModel3D {
 			}
 		};
 	}
-	
+
 	@Override
 	public IModel3D backfacedCopy() {
 		return SimpleServiceLocator.cclProxy.wrapModel(model.backfacedCopy());
@@ -273,7 +261,7 @@ public class Model3D implements IModel3D {
 				}
 			}
 		}
-		if(c == null) return null;
+		if (c == null) return null;
 		return wrap(c);
 	}
 }

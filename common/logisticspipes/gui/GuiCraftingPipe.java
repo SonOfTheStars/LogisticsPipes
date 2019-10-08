@@ -1,12 +1,27 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
  */
 
 package logisticspipes.gui;
+
+import java.io.IOException;
+
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.BlockPos;
+
+import lombok.Getter;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 import logisticspipes.LPItems;
 import logisticspipes.gui.modules.ModuleBaseGui;
@@ -25,22 +40,6 @@ import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.extention.GuiExtention;
 import logisticspipes.utils.string.StringUtils;
-
-import lombok.Getter;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-
-import java.io.IOException;
 
 public class GuiCraftingPipe extends ModuleBaseGui {
 
@@ -88,7 +87,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 
 		// Input slots
 		for (int l = 0; l < 9; l++) {
-			if(isFuzzy) {
+			if (isFuzzy) {
 				dummy.addFuzzyDummySlot(l, 8 + l * 18, 18, module.fuzzyCraftingFlagArray[l]);
 			} else {
 				dummy.addDummySlot(l, 8 + l * 18, 18);
@@ -97,8 +96,8 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 
 		// Output slot
 		int yPosOutput = 55;
-		if(isAdvancedSat) yPosOutput = 105;
-		if(isFuzzy) {
+		if (isAdvancedSat) yPosOutput = 105;
+		if (isFuzzy) {
 			dummy.addFuzzyDummySlot(9, 85, yPosOutput, module.outputFuzzyFlags);
 		} else {
 			dummy.addDummySlot(9, 85, yPosOutput);
@@ -108,7 +107,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 		fluidSlotIDs = new int[liquidCrafter];
 
 		for (int i = 0; i < liquidCrafter; i++) {
-			int liquidLeft = 0;
+			int liquidLeft;
 			if (isAdvancedSat) {
 				liquidLeft = -40;
 			} else {
@@ -171,7 +170,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 			if (isAdvancedSat) {
 				extention = new FluidCraftingExtention(i);
 			}
-			int liquidLeft = 0;
+			int liquidLeft;
 			if (isAdvancedSat) {
 				liquidLeft = guiLeft - 40;
 			} else {
@@ -264,32 +263,31 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 		switch (guibutton.id) {
 			case 0:
 				openSubGuiForSatelliteSelection(0, false);
-				return;
+				break;
 			case 3:
 				_pipe.importFromCraftingTable(_player);
-				return;
+				break;
 			case 4:
 				_pipe.openAttachedGui(_player);
 				//LogisticsEventListener.addGuiToReopen(_pipe.getX(), _pipe.getY(), _pipe.getZ(), 0); //TODO reactivate this
-				return;
+				break;
 			case 20:
 				_pipe.priorityUp(_player);
-				return;
+				break;
 			case 21:
 				_pipe.priorityDown(_player);
-				return;
+				break;
 			case 22:
 				openSubGuiForSatelliteSelection(100, true);
-				return;
+				break;
 			case 24:
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(CPipeCleanupToggle.class).setModulePos(_pipe));
-				return;
+				break;
 			case 25:
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(CPipeCleanupImport.class).setModulePos(_pipe));
-				return;
+				break;
 			default:
 				super.actionPerformed(guibutton);
-				return;
 		}
 	}
 

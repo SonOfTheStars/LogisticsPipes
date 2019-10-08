@@ -130,7 +130,7 @@ public class DevEnvHelper {
 			}
 		}
 
-		coreModList = Arrays.asList(FileListHelper.sortFileList(coreModList.toArray(new File[coreModList.size()])));
+		coreModList = Arrays.asList(FileListHelper.sortFileList(coreModList.toArray(new File[0])));
 
 		for (File coreMod : coreModList) {
 			FMLRelaunchLog.fine("Examining for coremod candidacy %s", coreMod.getName());
@@ -144,8 +144,7 @@ public class DevEnvHelper {
 				}
 				mfAttributes = jar.getManifest().getMainAttributes();
 				String ats = mfAttributes.getValue(ModAccessTransformer.FMLAT);
-				if (ats != null && !ats.isEmpty())
-				{
+				if (ats != null && !ats.isEmpty()) {
 					if (jar == null) //We could of loaded the external manifest earlier, if so the jar isn't loaded.
 						jar = new JarFile(coreMod);
 					ModAccessTransformer.addJar(jar, ats);
@@ -212,7 +211,7 @@ public class DevEnvHelper {
 				};
 				insertTransformer(acc);
 			}
-		} catch(Throwable t) {}
+		} catch (Throwable ignored) {}
 	}
 
 	@SneakyThrows
@@ -306,12 +305,12 @@ public class DevEnvHelper {
 	 * Everything Below this point is based in immibis BON. Thus it is licensed under his license:
 	 * LICENSE:
 	 * Copyright (C) 2013 Alex "immibis" Campbell
-	 * 
+	 *
 	 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
 	 * of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-	 * 
+	 *
 	 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-	 * 
+	 *
 	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 	 * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	 */
@@ -329,13 +328,13 @@ public class DevEnvHelper {
 			}
 		}
 
-		public byte[] transform_Sub(String name, String transformedName, byte[] basicClass) throws IOException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
+		public byte[] transform_Sub(String name, String transformedName, byte[] basicClass) throws IOException, SecurityException, IllegalArgumentException {
 			if (basicClass == null) {
 				return basicClass;
 			}
 			final String resourcePath = name.replace('.', '/').concat(".class");
 			URL classResource = Launch.classLoader.findResource(resourcePath);
-			String path = classResource.getPath().toString();
+			String path = classResource.getPath();
 			if (path.contains("LP_DEOBF.jar!/")) {
 				final ClassNode cn = new ClassNode();
 				ClassReader reader = new ClassReader(basicClass);
@@ -628,7 +627,7 @@ public class DevEnvHelper {
 
 			while (true) {
 
-				if(owner == null) {
+				if (owner == null) {
 					break;
 				}
 
@@ -771,7 +770,7 @@ public class DevEnvHelper {
 			}
 
 			int pos = 0;
-			String out = "";
+			StringBuilder out = new StringBuilder();
 			while (pos < desc.length()) {
 				switch (desc.charAt(pos)) {
 					case 'V':
@@ -786,21 +785,21 @@ public class DevEnvHelper {
 					case '[':
 					case '(':
 					case ')':
-						out += desc.charAt(pos);
+						out.append(desc.charAt(pos));
 						pos++;
 						break;
 					case 'L': {
 						int end = desc.indexOf(';', pos);
 						String obf = desc.substring(pos + 1, end);
 						pos = end + 1;
-						out += "L" + getClass(obf) + ";";
+						out.append("L").append(getClass(obf)).append(";");
 					}
-						break;
+					break;
 					default:
 						throw new RuntimeException("Unknown method descriptor character: " + desc.charAt(pos) + " (in " + desc + ")");
 				}
 			}
-			return out;
+			return out.toString();
 		}
 
 		public String mapTypeDescriptor(String in) {
@@ -959,7 +958,7 @@ public class DevEnvHelper {
 			loadCSVMapping(fieldNames, methodNames);
 		}
 
-		private void loadSRGMapping(SrgFile srg) throws CantLoadMCPMappingException {
+		private void loadSRGMapping(SrgFile srg) {
 			forwardSRG.setDefaultPackage("net/minecraft/src/");
 			reverseSRG.addPrefix("net/minecraft/src/", "");
 
@@ -1029,7 +1028,7 @@ public class DevEnvHelper {
 			}
 		}
 
-		private void loadCSVMapping(Map<String, String> fieldNames, Map<String, String> methodNames) throws CantLoadMCPMappingException {
+		private void loadCSVMapping(Map<String, String> fieldNames, Map<String, String> methodNames) {
 			for (Map.Entry<String, String> entry : fieldNames.entrySet()) {
 				String srgName = entry.getKey();
 				String mcpName = entry.getValue();
@@ -1102,8 +1101,10 @@ public class DevEnvHelper {
 
 	public static abstract class CsvFile {
 
-		/** Does not close <var>r</var>. */
-		public static Map<String, String> read(Reader r, int[] n_sides) throws IOException {
+		/**
+		 * Does not close <var>r</var>.
+		 */
+		public static Map<String, String> read(Reader r, int[] n_sides) {
 			Map<String, String> data = new HashMap<>();
 
 			@SuppressWarnings("resource")
@@ -1114,12 +1115,13 @@ public class DevEnvHelper {
 				String searge = in.next();
 				String name = in.next();
 				String side = in.next();
-				/*String desc =*/in.nextLine();
+				/*String desc =*/
+				in.nextLine();
 				try {
 					if (CsvFile.sideIn(Integer.parseInt(side), n_sides)) {
 						data.put(searge, name);
 					}
-				} catch (NumberFormatException e) {}
+				} catch (NumberFormatException ignored) {}
 			}
 			return data;
 		}
@@ -1168,8 +1170,10 @@ public class DevEnvHelper {
 			return ExcFile.read(new InputStreamReader(in, StandardCharsets.UTF_8));
 		}
 
-		/** Does not close <var>r</var>. */
-		public static ExcFile read(Reader r) throws IOException {
+		/**
+		 * Does not close <var>r</var>.
+		 */
+		public static ExcFile read(Reader r) {
 			//example line:
 			//net/minecraft/src/NetClientHandler.<init>(Lnet/minecraft/client/Minecraft;Ljava/lang/String;I)V=java/net/UnknownHostException,java/io/IOException|p_i42_1_,p_i42_2_,p_i42_3_
 
@@ -1209,7 +1213,6 @@ public class DevEnvHelper {
 
 				i = line.indexOf('|');
 				String excs = line.substring(0, i);
-				line = line.substring(i + 1);
 
 				if (excs.contains("CL_")) {
 					throw new RuntimeException(excs);
@@ -1246,8 +1249,10 @@ public class DevEnvHelper {
 
 		private SrgFile() {}
 
-		/** Does not close <var>r</var>. */
-		public static SrgFile read(Reader r, boolean reverse) throws IOException {
+		/**
+		 * Does not close <var>r</var>.
+		 */
+		public static SrgFile read(Reader r, boolean reverse) {
 			@SuppressWarnings("resource")
 			Scanner in = new Scanner(r);
 			SrgFile rv = new SrgFile();

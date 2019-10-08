@@ -114,7 +114,8 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 	}
 
 	@Override
-	public @Nonnull ItemStack getMultipleItems(ItemIdentifier itemIdent, int count) {
+	public @Nonnull
+	ItemStack getMultipleItems(ItemIdentifier itemIdent, int count) {
 		ItemStack stack = ItemStack.EMPTY;
 
 		if (_smartGroup != null) {
@@ -216,7 +217,8 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 	}
 
 	@Override
-	public @Nonnull ItemStack getSingleItem(ItemIdentifier itemIdent) {
+	public @Nonnull
+	ItemStack getSingleItem(ItemIdentifier itemIdent) {
 		return getMultipleItems(itemIdent, 1);
 	}
 
@@ -225,10 +227,10 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 		if (_smartGroup != null) {
 			ItemStack stack = itemIdent.makeNormalStack(1);
 			BitSet set = new BitSet();
-			for(int slot:_smartGroup.enumerateDrawersForInsertion(stack, true)) {
+			for (int slot : _smartGroup.enumerateDrawersForInsertion(stack, true)) {
 				set.set(slot);
 			}
-			for(int slot:_smartGroup.enumerateDrawersForExtraction(stack, true)) {
+			for (int slot : _smartGroup.enumerateDrawersForExtraction(stack, true)) {
 				set.set(slot);
 			}
 			int slot = -1;
@@ -268,10 +270,10 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 
 		if (_smartGroup != null) {
 			BitSet set = new BitSet();
-			for(int slot:_smartGroup.enumerateDrawersForInsertion(protoStack, false)) {
+			for (int slot : _smartGroup.enumerateDrawersForInsertion(protoStack, false)) {
 				set.set(slot);
 			}
-			for(int slot:_smartGroup.enumerateDrawersForExtraction(protoStack, false)) {
+			for (int slot : _smartGroup.enumerateDrawersForExtraction(protoStack, false)) {
 				set.set(slot);
 			}
 			int slot = -1;
@@ -305,7 +307,6 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 				continue;
 			}
 
-
 			if (drawer.canItemBeStored(protoStack)) {
 				if (drawer.isEmpty()) {
 					room += drawer.getMaxCapacity(protoStack);
@@ -333,16 +334,16 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 
 		if (_smartGroup != null) {
 			BitSet set = new BitSet();
-			for(int slot:_smartGroup.enumerateDrawersForInsertion(stack, false)) {
+			for (int slot : _smartGroup.enumerateDrawersForInsertion(stack, false)) {
 				set.set(slot);
 			}
-			for(int slot:_smartGroup.enumerateDrawersForExtraction(stack, false)) {
+			for (int slot : _smartGroup.enumerateDrawersForExtraction(stack, false)) {
 				set.set(slot);
 			}
 			int slot = -1;
 			while ((slot = set.nextSetBit(slot + 1)) != -1) {
 				IDrawer drawer = _drawer.getDrawer(slot);
-				int avail = 0;
+				int avail;
 				if (!drawer.isEmpty()) {
 					avail = Math.min(stack.getCount(), drawer.getRemainingCapacity());
 					if (doAdd) {
@@ -381,7 +382,7 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 			}
 
 			if (drawer.canItemBeStored(stack)) {
-				int avail = 0;
+				int avail;
 				if (drawer.isEmpty()) {
 					avail = Math.min(stack.getCount(), drawer.getMaxCapacity(stack));
 					if (doAdd) {
@@ -416,7 +417,8 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 	}
 
 	@Override
-	public @Nonnull ItemStack getStackInSlot(int i) {
+	public @Nonnull
+	ItemStack getStackInSlot(int i) {
 		if (!_drawer.isDrawerEnabled(i)) {
 			return ItemStack.EMPTY;
 		}
@@ -425,7 +427,8 @@ public class StorageDrawersInventoryHandler extends SpecialInventoryHandler {
 	}
 
 	@Override
-	public @Nonnull ItemStack decrStackSize(int i, int j) {
+	public @Nonnull
+	ItemStack decrStackSize(int i, int j) {
 		if (!_drawer.isDrawerEnabled(i)) {
 			return ItemStack.EMPTY;
 		}

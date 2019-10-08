@@ -1,20 +1,20 @@
 package logisticspipes.proxy.interfaces;
 
-import logisticspipes.interfaces.IHUDConfig;
-
 import net.minecraft.item.ItemStack;
+
+import logisticspipes.interfaces.IHUDConfig;
 
 public interface IModularPowersuitsProxy {
 
-	public void initModules();
+	void initModules();
 
-	public boolean isMPSHelm(ItemStack stack);
+	boolean isMPSHelm(ItemStack stack);
 
-	public boolean hasActiveHUDModule(ItemStack stack);
+	boolean hasActiveHUDModule(ItemStack stack);
 
-	public IHUDConfig getConfigFor(ItemStack stack);
+	IHUDConfig getConfigFor(ItemStack stack);
 
-	public boolean isMPSHand(ItemStack stack);
+	boolean isMPSHand(ItemStack stack);
 
-	public boolean hasHelmHUDInstalled(ItemStack stack);
+	boolean hasHelmHUDInstalled(ItemStack stack);
 }

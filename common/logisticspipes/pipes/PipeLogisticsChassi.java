@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -236,7 +235,7 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 			InventoryChanged(_moduleInventory);
 			_module.readFromNBT(nbttagcompound);
 			int tmp = nbttagcompound.getInteger("Orientation");
-			if(tmp == -1) {
+			if (tmp == -1) {
 				pointedDirection = null;
 			} else {
 				pointedDirection = EnumFacingUtil.getOrientation(tmp % 6);
@@ -276,13 +275,13 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 				ItemIdentifierStack ms = _moduleInventory.getIDStackInSlot(i);
 				if (ms != null) {
 					ItemStack s = ms.makeNormalStack();
-					ItemModuleInformationManager.saveInfotmation(s, getLogisticsModule().getSubModule(i));
+					ItemModuleInformationManager.saveInformation(s, getLogisticsModule().getSubModule(i));
 					_moduleInventory.setInventorySlotContents(i, s);
 				}
 			}
 			_moduleInventory.dropContents(getWorld(), getX(), getY(), getZ());
 
-			for(int i=0; i < getChassiSize(); i++) {
+			for (int i = 0; i < getChassiSize(); i++) {
 				getModuleUpgradeManager(i).dropUpgrades();
 			}
 		}
@@ -689,7 +688,7 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		for (int i = 0; i < getChassiSize(); i++) {
 			LogisticsModule x = _module.getSubModule(i);
 
-			if (x != null && x instanceof ICraftItems) {
+			if (x instanceof ICraftItems) {
 				if (((ICraftItems) x).canCraft(toCraft)) {
 					return ((ICraftItems) x).addCrafting(toCraft);
 				}
@@ -706,7 +705,7 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		for (int i = 0; i < getChassiSize(); i++) {
 			LogisticsModule x = _module.getSubModule(i);
 
-			if (x != null && x instanceof ICraftItems) {
+			if (x instanceof ICraftItems) {
 				if (craftables == null) {
 					craftables = new LinkedList<>();
 				}
@@ -721,7 +720,7 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		for (int i = 0; i < getChassiSize(); i++) {
 			LogisticsModule x = _module.getSubModule(i);
 
-			if (x != null && x instanceof ICraftItems) {
+			if (x instanceof ICraftItems) {
 				if (((ICraftItems) x).canCraft(toCraft)) {
 					return true;
 				}

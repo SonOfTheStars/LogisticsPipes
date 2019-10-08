@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import logisticspipes.LPConstants;
 import logisticspipes.network.exception.TargetNotFoundException;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -79,7 +78,6 @@ public abstract class CoordinatesPacket extends ModernPacket {
 		posZ = pos.getZ();
 		return this;
 	}
-
 
 	public TileEntity getTile(World world, Function<TileEntity, Boolean> validateResult) {
 		TileEntity tile = getTile(world, TileEntity.class);

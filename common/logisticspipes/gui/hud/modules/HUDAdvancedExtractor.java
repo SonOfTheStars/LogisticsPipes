@@ -3,6 +3,13 @@ package logisticspipes.gui.hud.modules;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.EnumFacing;
+
+import net.minecraftforge.fml.client.FMLClientHandler;
+
+import org.lwjgl.opengl.GL11;
+
 import logisticspipes.interfaces.IHUDButton;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.modules.ModuleAdvancedExtractor;
@@ -12,14 +19,6 @@ import logisticspipes.utils.gui.hud.BasicHUDButton;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.ItemStackRenderer;
 import logisticspipes.utils.item.ItemStackRenderer.DisplayAmount;
-
-import net.minecraft.client.Minecraft;
-
-import net.minecraft.util.EnumFacing;
-
-import net.minecraftforge.fml.client.FMLClientHandler;
-
-import org.lwjgl.opengl.GL11;
 
 public class HUDAdvancedExtractor implements IHUDModuleRenderer {
 
@@ -95,7 +94,7 @@ public class HUDAdvancedExtractor implements IHUDModuleRenderer {
 			}
 
 			GL11.glTranslatef(0.0F, 0.0F, -0.000005F);
-			int color = 0;
+			int color;
 			if (hover && !clicked) {
 				color = Color.getValue(Color.LIGHT_YELLOW);
 			} else if (!clicked) {

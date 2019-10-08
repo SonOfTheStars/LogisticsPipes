@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -11,7 +10,14 @@ package logisticspipes.gui;
 import java.util.LinkedList;
 import java.util.List;
 
-import logisticspipes.interfaces.ISlotCheck;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
+
+import org.lwjgl.opengl.GL11;
+
 import logisticspipes.items.ItemModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
@@ -28,18 +34,9 @@ import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.string.StringUtils;
 
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
-
-import org.lwjgl.opengl.GL11;
-
 public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 
 	private final PipeLogisticsChassi _chassiPipe;
-	private final EntityPlayer _player;
 	private final IInventory _moduleInventory;
 	//private final GuiScreen _previousGui;
 	private final List<SmallGuiButton> moduleConfigButtons = new LinkedList<>();
@@ -47,20 +44,16 @@ public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 	private final Slot[] upgradeslot = new Slot[16];
 	private GuiButton[] upgradeConfig = new GuiButton[16];
 
-	private int left;
-	private int top;
-
 	private boolean hasUpgradeModuleUpgarde;
 
 	public GuiChassiPipe(EntityPlayer player, PipeLogisticsChassi chassi, boolean hasUpgradeModuleUpgarde) { //, GuiScreen previousGui) {
 		super(null);
-		_player = player;
 		_chassiPipe = chassi;
 		_moduleInventory = chassi.getModuleInventory();
 		//_previousGui = previousGui;
 		this.hasUpgradeModuleUpgarde = hasUpgradeModuleUpgarde;
 
-		DummyContainer dummy = new DummyContainer(_player.inventory, _moduleInventory);
+		DummyContainer dummy = new DummyContainer(player.inventory, _moduleInventory);
 		if (_chassiPipe.getChassiSize() < 5) {
 			dummy.addNormalSlotsForPlayerInventory(18, 97);
 		} else {
@@ -89,8 +82,8 @@ public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 			for (int i = 0; i < _chassiPipe.getChassiSize(); i++) {
 				final int fI = i;
 				ModuleUpgradeManager upgradeManager = _chassiPipe.getModuleUpgradeManager(i);
-				upgradeslot[i*2] = dummy.addUpgradeSlot(0, upgradeManager, 0, 145, 9 + i * 20, itemStack -> ChassiGuiProvider.checkStack(itemStack, _chassiPipe, fI));
-				upgradeslot[i*2+1] = dummy.addUpgradeSlot(1, upgradeManager, 1, 165, 9 + i * 20, itemStack -> ChassiGuiProvider.checkStack(itemStack, _chassiPipe, fI));
+				upgradeslot[i * 2] = dummy.addUpgradeSlot(0, upgradeManager, 0, 145, 9 + i * 20, itemStack -> ChassiGuiProvider.checkStack(itemStack, _chassiPipe, fI));
+				upgradeslot[i * 2 + 1] = dummy.addUpgradeSlot(1, upgradeManager, 1, 165, 9 + i * 20, itemStack -> ChassiGuiProvider.checkStack(itemStack, _chassiPipe, fI));
 			}
 		}
 
@@ -110,8 +103,8 @@ public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 	public void initGui() {
 		super.initGui();
 
-		left = width / 2 - xSize / 2;
-		top = height / 2 - ySize / 2;
+		int left = width / 2 - xSize / 2;
+		int top = height / 2 - ySize / 2;
 
 		buttonList.clear();
 		moduleConfigButtons.clear();
@@ -129,10 +122,10 @@ public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 			}
 
 			if (hasUpgradeModuleUpgarde) {
-				upgradeConfig[i*2] = addButton(new SmallGuiButton(100 + i, guiLeft + 134, guiTop + 12 + i * 20, 10, 10, "!"));
-				upgradeConfig[i*2].visible = _chassiPipe.getModuleUpgradeManager(i).hasGuiUpgrade(0);
-				upgradeConfig[i*2+1] = addButton(new SmallGuiButton(120 + i, guiLeft + 182, guiTop + 12 + i * 20, 10, 10, "!"));
-				upgradeConfig[i*2+1].visible = _chassiPipe.getModuleUpgradeManager(i).hasGuiUpgrade(1);
+				upgradeConfig[i * 2] = addButton(new SmallGuiButton(100 + i, guiLeft + 134, guiTop + 12 + i * 20, 10, 10, "!"));
+				upgradeConfig[i * 2].visible = _chassiPipe.getModuleUpgradeManager(i).hasGuiUpgrade(0);
+				upgradeConfig[i * 2 + 1] = addButton(new SmallGuiButton(120 + i, guiLeft + 182, guiTop + 12 + i * 20, 10, 10, "!"));
+				upgradeConfig[i * 2 + 1].visible = _chassiPipe.getModuleUpgradeManager(i).hasGuiUpgrade(1);
 			}
 		}
 	}
@@ -147,7 +140,7 @@ public class GuiChassiPipe extends LogisticsBaseGuiScreen {
 				MainProxy.sendPacketToServer(packet);
 			}
 		}
-		for(int i=0;i<upgradeConfig.length;i++) {
+		for (int i = 0; i < upgradeConfig.length; i++) {
 			if (upgradeConfig[i] == guibutton) {
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(OpenUpgradePacket.class).setSlot(upgradeslot[i]));
 			}
