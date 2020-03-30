@@ -11,6 +11,12 @@
       <module name="LogisticsPipes.dummy.test" target="1.8" />
       <module name="LogisticsPipes.main" target="1.8" />
       <module name="LogisticsPipes.test" target="1.8" />
+      <module name="network.rs485.dummy.api" target="1.8" />
+      <module name="network.rs485.dummy.main" target="1.8" />
+      <module name="network.rs485.dummy.test" target="1.8" />
+      <module name="network.rs485.LogisticsPipes.api" target="1.8" />
+      <module name="network.rs485.LogisticsPipes.main" target="1.8" />
+      <module name="network.rs485.LogisticsPipes.test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
