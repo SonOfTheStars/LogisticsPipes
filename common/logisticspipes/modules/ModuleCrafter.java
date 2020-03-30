@@ -92,6 +92,7 @@ import logisticspipes.request.resources.DictResource;
 import logisticspipes.request.resources.FluidResource;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
+import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.LogisticsDictPromise;
 import logisticspipes.routing.LogisticsExtraDictPromise;
@@ -594,7 +595,8 @@ public class ModuleCrafter extends LogisticsGuiModule implements ICraftItems, IH
 			}
 			int satelliteRouterId = SimpleServiceLocator.routerManager.getIDforUUID(satelliteUUID);
 			if (satelliteRouterId != -1) {
-				return !getRouter().getRouteTable().get(satelliteRouterId).isEmpty();
+				List<ExitRoute> rt = getRouter().getRouteTable().get(satelliteRouterId);
+				return rt != null && !rt.isEmpty();
 			}
 		} else {
 			boolean foundAll = true;
@@ -606,7 +608,8 @@ public class ModuleCrafter extends LogisticsGuiModule implements ICraftItems, IH
 
 				int satelliteRouterId = SimpleServiceLocator.routerManager.getIDforUUID(advancedSatelliteUUIDArray[i]);
 				if (satelliteRouterId != -1) {
-					if (!getRouter().getRouteTable().get(satelliteRouterId).isEmpty()) {
+					List<ExitRoute> rt = getRouter().getRouteTable().get(satelliteRouterId);
+					if (rt != null && !rt.isEmpty()) {
 						foundOne = true;
 					}
 				}
@@ -1223,10 +1226,12 @@ public class ModuleCrafter extends LogisticsGuiModule implements ICraftItems, IH
 		if (available == 0) {
 			return null;
 		}
-		if (!_service.useEnergy(neededEnergy() * Math.min(count, available))) {
+		if (!_service.canUseEnergy(neededEnergy() * Math.min(count, available))) {
 			return null;
 		}
-		return invUtil.getMultipleItems(itemToExtract, Math.min(count, available));
+		ItemStack extracted = invUtil.getMultipleItems(itemToExtract, Math.min(count, available));
+		_service.useEnergy(neededEnergy() * extracted.getCount());
+		return extracted;
 	}
 
 	private ItemStack extractFromInventoryFiltered(@Nonnull IInventoryUtil invUtil, ItemIdentifierInventory filter, boolean isExcluded, int filterInvLimit) {
@@ -1271,10 +1276,12 @@ public class ModuleCrafter extends LogisticsGuiModule implements ICraftItems, IH
 		if (available == 0) {
 			return null;
 		}
-		if (!_service.useEnergy(neededEnergy() * Math.min(64, available))) {
+		if (!_service.canUseEnergy(neededEnergy() * Math.min(64, available))) {
 			return null;
 		}
-		return invUtil.getMultipleItems(wanteditem, Math.min(64, available));
+		ItemStack extracted = invUtil.getMultipleItems(wanteditem, Math.min(64, available));
+		_service.useEnergy(neededEnergy() * extracted.getCount());
+		return extracted;
 	}
 
 	private ItemStack extractFromLogisticsCraftingTable(
